@@ -15,10 +15,29 @@ func prtUsage(){
 	fmt.Println("\tedit, -e proj_id: Edit an existing project.")
 	fmt.Println("\tupdate, -u proj_id [dir|file]: Update codes of an existing project.If path is not refered, try to use current dir.")
 	fmt.Println("\tdel, -d proj_id: Delete a project.")
+	fmt.Println("\tsearch, -s keyword1[, keyword2,keyword3...]: search a project by keywords.")
 }
 
 func tryCreate(){
 	fmt.Println("create:")
+	count:=len(os.Args)
+	if(count>3){
+		prtUsage()
+	}else{
+		path:=os.Args[2]
+		if finfo,err:=os.Stat(path);err!=nil{
+			fmt.Println("Path error:",err.Error())
+		}else{
+			if finfo.IsDir(){
+				doCreatePath(path)
+			}else{
+				doCreateFile(path)
+			}
+		}
+	}
+}
+
+func searchProj(){
 }
 
 func listProj(){
@@ -43,7 +62,7 @@ func delProj(){
 
 func main(){
 	argc:=len(os.Args)
-	if argc<2 || argc>4{
+	if argc<2 {
 		prtUsage()
 	}else{
 		switch os.Args[1]{
@@ -71,6 +90,11 @@ func main(){
 			fallthrough
 		case "-d":
 			delProj()
+
+		case "search":
+			fallthrough
+		case "-s":
+			searchProj()
 
 		default:
 			prtUsage()

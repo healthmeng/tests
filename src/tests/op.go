@@ -21,6 +21,9 @@ func doList(){
 	fmt.Println("Do list")
 }
 
-func doCreate(path string){
+func doCreatePath(path string){
 	fmt.Println(path)
+}
+
+func doCreateFile(file string){
 }
