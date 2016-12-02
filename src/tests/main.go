@@ -12,10 +12,11 @@ func prtUsage(){
 	fmt.Println("commands include:")
 	fmt.Println("\tcreate, -c dir|file: Create a test project.")
 	fmt.Println("\tlist, -l: List all test projects and their infomations(IDs may be most useful.")
-	fmt.Println("\tedit, -e proj_id: Edit an existing project.")
+	fmt.Println("\tedit, -e proj_id: Edit an existing project's info.")
 	fmt.Println("\tupdate, -u proj_id [dir|file]: Update codes of an existing project.If path is not refered, try to use current dir.")
 	fmt.Println("\tdel, -d proj_id: Delete a project.")
-	fmt.Println("\tsearch, -s keyword1[, keyword2,keyword3...]: search a project by keywords.")
+	fmt.Println("\tsearch, -s keyword1[, keyword2,keyword3...]: Search a project by keywords.")
+	fmt.Println("\trun, -r proj_id: Run a proj, get commandline result.")
 }
 
 func tryCreate(){
@@ -28,10 +29,10 @@ func tryCreate(){
 		if finfo,err:=os.Stat(path);err!=nil{
 			fmt.Println("Path error:",err.Error())
 		}else{
-			if finfo.IsDir(){
-				doCreatePath(path)
+			if id,err:=doCreate(path,finfo.IsDir());err!=nil{
+				fmt.Println("Create failed:",err)
 			}else{
-				doCreateFile(path)
+				fmt.Println("Create success,project id: ",id)
 			}
 		}
 	}
@@ -59,6 +60,12 @@ func updateSrc(){
 func delProj(){
     fmt.Println("del:")
 }
+
+
+func runProj(){
+    fmt.Println("run:")
+}
+
 
 func main(){
 	argc:=len(os.Args)
@@ -95,6 +102,11 @@ func main(){
 			fallthrough
 		case "-s":
 			searchProj()
+
+		case "run":
+			fallthrough
+		case "-r":
+			runProj()
 
 		default:
 			prtUsage()
