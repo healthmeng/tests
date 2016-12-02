@@ -4,6 +4,10 @@ import (
 "fmt"
 "errors"
 "encoding/json"
+"os/exec"
+"net"
+"os"
+"io"
 )
 
 var rsvr string ="123.206.55.31"
@@ -16,21 +20,25 @@ type PROJINFO struct{
 	Descr string
 	Conclude string
 	Path string
-	IsDir string
+	IsDir bool 
 }
 
 
 
-func (info* PROJINFO)remoteCreate()(int , erro){
+func (info* PROJINFO)remoteCreate()(int , error){
 	// send object by json, then send file
+	var ctext string
 	if obj,err:=json.Marshal(info);err!=nil{
 		return -1,errors.New("struct json marshal error")
+	}else{
+		ctext=("Create\n")+string(obj)
 	}
-	if conn,err:=net.Dial("tcp",rsvr+rport); err!=nil{
+
+	conn,err:=net.Dial("tcp",rsvr+rport)
+	if err!=nil{
 		return -1,err
 	}
-	ctext:=[]byte("Create\n")+obj
-	if _,err:=conn.Write(ctext);err!=nil{
+	if _,err:=conn.Write([]byte(ctext));err!=nil{
 		conn.Close()
 		return -1,errors.New("send \"Create\" message error")
 	}
@@ -44,6 +52,23 @@ func (info* PROJINFO)remoteCreate()(int , erro){
 		return -1,errors.New("remove server refused:"+string(buf))
 	}
 	// tar file, and send
+	tmpfile:="/tmp/"+info.Path+".tgz"
+	cmd:=fmt.Sprintf("tar czvf %s %s",tmpfile,info.Path)
+	exec.Command(cmd)
+// copy file
+	rd,_:=os.Open(tmpfile)
+	io.Copy(conn,rd)
+	os.Remove("/tmp/"+info.Path+".tgz")
+// refill object by json data
+	if _,err:=conn.Read(buf);err!=nil{
+		conn.Close()
+		return -1,errors.New("receive created data error")
+	}
+	conn.Close()
+	if err:=json.Unmarshal(buf,info); err!=nil{
+		return -1,errors.New("resolve remote data error")
+	}
+	return info.Id,nil
 }
 
 func(info* PROJINFO)confirm() error{
@@ -72,7 +97,7 @@ func doList(){
 }
 
 func createInfo(path string, isdir bool) *PROJINFO{
-	PROJINFO info:=&PROJINFO{-1,"noname","atime","No comment.","No explain,obviously.",Path,Isdir}
+	info:=&PROJINFO{-1,"noname","atime","No comment.","No explain,obviously.",path,isdir}
 	info.scanInfo()
 	return info
 }
