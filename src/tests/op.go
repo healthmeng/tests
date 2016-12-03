@@ -38,17 +38,15 @@ func (info* PROJINFO)remoteCreate()(int , error){
 	if err!=nil{
 		return -1,err
 	}
+	defer conn.Close()
 	if _,err:=conn.Write([]byte(ctext));err!=nil{
-		conn.Close()
 		return -1,errors.New("send \"Create\" message error")
 	}
 	buf:=make([]byte,1024,1024)
 	if _,err:=conn.Read(buf);err!=nil{
-		conn.Close()
 		return -1,errors.New("receive data error")
 	}
 	if string(buf) !="OK"{
-		conn.Close()
 		return -1,errors.New("remove server refused:"+string(buf))
 	}
 	// tar file, and send
@@ -61,10 +59,8 @@ func (info* PROJINFO)remoteCreate()(int , error){
 	os.Remove("/tmp/"+info.Path+".tgz")
 // refill object by json data
 	if _,err:=conn.Read(buf);err!=nil{
-		conn.Close()
 		return -1,errors.New("receive created data error")
 	}
-	conn.Close()
 	if err:=json.Unmarshal(buf,info); err!=nil{
 		return -1,errors.New("resolve remote data error")
 	}
