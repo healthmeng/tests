@@ -8,6 +8,7 @@ import (
 "net"
 "os"
 "io"
+"bufio"
 )
 
 var rsvr string ="123.206.55.31"
@@ -23,7 +24,15 @@ type PROJINFO struct{
 	IsDir bool 
 }
 
-
+func (info* PROJINFO)dumpInfo(){
+	fmt.Println("Id=",info.Id)
+	fmt.Println("Title=",info.Title)
+	fmt.Println("Atime=",info.Atime)
+	fmt.Println("Descr=",info.Descr)
+	fmt.Println("Conclude=",info.Conclude)
+	fmt.Println("Path=",info.Path)
+	fmt.Println("IsDir=",info.IsDir)
+}
 
 func (info* PROJINFO)remoteCreate()(int , error){
 	// send object by json, then send file
@@ -50,20 +59,31 @@ func (info* PROJINFO)remoteCreate()(int , error){
 		return -1,errors.New("remove server refused:"+string(buf))
 	}
 	// tar file, and send
-	tmpfile:="/tmp/"+info.Path+".tgz"
+	tmpfile:="/tmp/"+"proj.tgz"
 	cmd:=fmt.Sprintf("tar czvf %s %s",tmpfile,info.Path)
 	exec.Command(cmd)
 // copy file
 	rd,_:=os.Open(tmpfile)
 	io.Copy(conn,rd)
-	os.Remove("/tmp/"+info.Path+".tgz")
+	rd.Close()
+	os.Remove(tmpfile)
 // refill object by json data
-	if _,err:=conn.Read(buf);err!=nil{
+/*	if _,err:=conn.Read(buf);err!=nil{
+		return -1,errors.New("receive created data error")
+	}*/
+	rb:=bufio.NewReader(conn)
+	result,_,err:=rb.ReadLine()
+	if(err!=nil){
 		return -1,errors.New("receive created data error")
 	}
+	if string(result)!="SUCCESS" {
+		return -1,errors.New("receive failed:"+string(result))
+	}
+	conn.Read(buf)
 	if err:=json.Unmarshal(buf,info); err!=nil{
 		return -1,errors.New("resolve remote data error")
 	}
+	info.dumpInfo()
 	return info.Id,nil
 }
 
