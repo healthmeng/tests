@@ -15,13 +15,14 @@ var rsvr string ="123.206.55.31"
 var rport string =":8192"
 
 type PROJINFO struct{
-	Id int
+	Id int64
 	Title string
 	Atime string // always use database updatetime
 	Descr string
 	Conclude string
 	Path string
 	IsDir bool 
+	Size int64
 }
 
 func (info* PROJINFO)dumpInfo(){
@@ -55,13 +56,13 @@ func (info* PROJINFO)remoteCreate()(int , error){
 	if _,err:=conn.Read(buf);err!=nil{
 		return -1,errors.New("receive data error")
 	}
-	if string(buf) !="OK"{
-		return -1,errors.New("remove server refused:"+string(buf))
+	if string(buf[:2]) !="OK"{
+		return -1,errors.New("remote server refused:"+string(buf))
 	}
 	// tar file, and send
 	tmpfile:="/tmp/"+"proj.tgz"
-	cmd:=fmt.Sprintf("tar czvf %s %s",tmpfile,info.Path)
-	exec.Command(cmd)
+//	cmd:=fmt.Sprintf("tar czvf %s %s",tmpfile,info.Path)
+	exec.Command("tar","czvf",tmpfile,info.Path).Run()
 // copy file
 	rd,_:=os.Open(tmpfile)
 	io.Copy(conn,rd)
@@ -79,8 +80,9 @@ func (info* PROJINFO)remoteCreate()(int , error){
 	if string(result)!="SUCCESS" {
 		return -1,errors.New("receive failed:"+string(result))
 	}
-	conn.Read(buf)
-	if err:=json.Unmarshal(buf,info); err!=nil{
+	len,_:=conn.Read(buf)
+	fmt.Println("last result:",string(buf))
+	if err:=json.Unmarshal(buf[:len],info); err!=nil{
 		return -1,errors.New("resolve remote data error")
 	}
 	info.dumpInfo()
@@ -102,9 +104,14 @@ func (info* PROJINFO)scanInfo(){
 	fmt.Printf("Title (default: %s):",info.Title)
 	fmt.Scanf("%s",&info.Title)
 	fmt.Printf("Description (default: %s)",info.Descr)
-	fmt.Scanf("%s",&info.Descr)
+	rd:=bufio.NewReader(os.Stdin)
+	bt,_,_:=rd.ReadLine()
+	info.Descr=string(bt)
+//	fmt.Scanf("%s",&info.Descr)
 	fmt.Printf("Conclusion (default: %s)",info.Conclude)
-	fmt.Scanf("%s",&info.Conclude)
+//	fmt.Scanf("%s",&info.Conclude)
+	bt,_,_=rd.ReadLine()
+	info.Conclude=string(bt)
 }
 
 func doList(){
