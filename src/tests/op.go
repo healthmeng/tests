@@ -15,7 +15,7 @@ var rsvr string ="123.206.55.31"
 var rport string =":8192"
 
 type PROJINFO struct{
-	Id int64
+	Id int
 	Title string
 	Atime string // always use database updatetime
 	Descr string
@@ -33,9 +33,24 @@ func (info* PROJINFO)dumpInfo(){
 	fmt.Println("Conclude=",info.Conclude)
 	fmt.Println("Path=",info.Path)
 	fmt.Println("IsDir=",info.IsDir)
+	fmt.Println("Size=",info.Size)
 }
 
 func (info* PROJINFO)remoteCreate()(int , error){
+
+	conn,err:=net.Dial("tcp",rsvr+rport)
+	if err!=nil{
+		return -1,err
+	}
+	defer conn.Close()
+
+	rb:=bufio.NewReader(conn)
+	// tar file, and get size 
+	tmpfile:="/tmp/"+"proj.tgz"
+//	cmd:=fmt.Sprintf("tar czvf %s %s",tmpfile,info.Path)
+	exec.Command("tar","czvf",tmpfile,info.Path).Run()
+	st,_:=os.Stat(tmpfile)
+	info.Size=st.Size()
 	// send object by json, then send file
 	var ctext string
 	if obj,err:=json.Marshal(info);err!=nil{
@@ -44,25 +59,17 @@ func (info* PROJINFO)remoteCreate()(int , error){
 		ctext=("Create\n")+string(obj)
 	}
 
-	conn,err:=net.Dial("tcp",rsvr+rport)
-	if err!=nil{
-		return -1,err
-	}
-	defer conn.Close()
 	if _,err:=conn.Write([]byte(ctext));err!=nil{
 		return -1,errors.New("send \"Create\" message error")
 	}
 	buf:=make([]byte,1024,1024)
-	if _,err:=conn.Read(buf);err!=nil{
+	if _,err:=rb.Read(buf);err!=nil{
 		return -1,errors.New("receive data error")
 	}
 	if string(buf[:2]) !="OK"{
 		return -1,errors.New("remote server refused:"+string(buf))
 	}
-	// tar file, and send
-	tmpfile:="/tmp/"+"proj.tgz"
-//	cmd:=fmt.Sprintf("tar czvf %s %s",tmpfile,info.Path)
-	exec.Command("tar","czvf",tmpfile,info.Path).Run()
+
 // copy file
 	rd,_:=os.Open(tmpfile)
 	io.Copy(conn,rd)
@@ -72,7 +79,6 @@ func (info* PROJINFO)remoteCreate()(int , error){
 /*	if _,err:=conn.Read(buf);err!=nil{
 		return -1,errors.New("receive created data error")
 	}*/
-	rb:=bufio.NewReader(conn)
 	result,_,err:=rb.ReadLine()
 	if(err!=nil){
 		return -1,errors.New("receive created data error")
@@ -80,9 +86,9 @@ func (info* PROJINFO)remoteCreate()(int , error){
 	if string(result)!="SUCCESS" {
 		return -1,errors.New("receive failed:"+string(result))
 	}
-	len,_:=conn.Read(buf)
-	fmt.Println("last result:",string(buf))
+	len,_:=rb.Read(buf)
 	if err:=json.Unmarshal(buf[:len],info); err!=nil{
+		fmt.Println(string(buf[:len]))
 		return -1,errors.New("resolve remote data error")
 	}
 	info.dumpInfo()
@@ -120,7 +126,7 @@ func doList(){
 }
 
 func createInfo(path string, isdir bool) *PROJINFO{
-	info:=&PROJINFO{-1,"noname","atime","No comment.","No explain,obviously.",path,isdir}
+	info:=&PROJINFO{-1,"noname","atime","No comment.","No explain,obviously.",path,isdir,0}
 	info.scanInfo()
 	return info
 }

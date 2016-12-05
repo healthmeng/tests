@@ -39,7 +39,7 @@ func procConn(conn net.Conn){
 		conn.Write([]byte("OK"))
 		exec.Command("mkdir", "-p", fmt.Sprintf("/opt/testssvr/%d",proj.Id)).Run()
 		if crfile,err:=os.Create(fmt.Sprintf("/opt/testssvr/%d/proj.tgz",proj.Id));err==nil{
-			io.Copy(crfile,conn)
+			io.CopyN(crfile,conn,proj.Size)
 			crfile.Close()
 			obj,_:=json.Marshal(proj)
 			ret:="SUCCESS\n"+string(obj)
@@ -52,7 +52,6 @@ func procConn(conn net.Conn){
 	default:
 		fmt.Println("Unknown command:",command)
 	}
-	fmt.Println("create return !")
 }
 
 func main(){
