@@ -21,6 +21,6 @@ type PROJINFO struct{
 func (info* PROJINFO) CreateInDB() error{
  info.Id=10
  info.Atime=time.Now().String()
- fmt.Println("create")
+ fmt.Println("create in db ok")
  return nil
 }
