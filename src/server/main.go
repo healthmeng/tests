@@ -23,12 +23,11 @@ func procConn(conn net.Conn){
 	switch string(command){
 	case "Create":
 		buf:=make([]byte,4096,4096)
-		if  _,err:=rd.Read(buf); err!=nil{
+		if  len,err:=rd.Read(buf); err!=nil{
 			fmt.Println("Read create parameters error:",err)
 			return
-		}
-		if err:=json.Unmarshal(buf,proj);err!=nil{
-			fmt.Println("Resove create data error:",string(buf))
+		}else if err:=json.Unmarshal(buf[:len],proj);err!=nil{
+			fmt.Println("Resolve create data error:",string(buf))
 			conn.Write([]byte("ERROR "+err.Error()))
 			return
 		}
@@ -38,7 +37,7 @@ func procConn(conn net.Conn){
 			return
 		}
 		conn.Write([]byte("OK"))
-		exec.Command(fmt.Sprintf("mkdir -p /opt/testssvr/%d",proj.Id))
+		exec.Command("mkdir", "-p", fmt.Sprintf("/opt/testssvr/%d",proj.Id)).Run()
 		if crfile,err:=os.Create(fmt.Sprintf("/opt/testssvr/%d/proj.tgz",proj.Id));err==nil{
 			io.Copy(crfile,conn)
 			crfile.Close()
@@ -53,6 +52,7 @@ func procConn(conn net.Conn){
 	default:
 		fmt.Println("Unknown command:",command)
 	}
+	fmt.Println("create return !")
 }
 
 func main(){
