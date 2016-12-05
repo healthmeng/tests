@@ -47,10 +47,13 @@ func (info* PROJINFO)remoteCreate()(int , error){
 	rb:=bufio.NewReader(conn)
 	// tar file, and get size 
 	tmpfile:="/tmp/"+"proj.tgz"
-//	cmd:=fmt.Sprintf("tar czvf %s %s",tmpfile,info.Path)
 	exec.Command("tar","czvf",tmpfile,info.Path).Run()
 	st,_:=os.Stat(tmpfile)
 	info.Size=st.Size()
+	defer  os.Remove(tmpfile)
+	if err:=info.confirm();err!=nil{
+		return -1,err
+	}
 	// send object by json, then send file
 	var ctext string
 	if obj,err:=json.Marshal(info);err!=nil{
@@ -74,11 +77,8 @@ func (info* PROJINFO)remoteCreate()(int , error){
 	rd,_:=os.Open(tmpfile)
 	io.Copy(conn,rd)
 	rd.Close()
-	os.Remove(tmpfile)
-// refill object by json data
-/*	if _,err:=conn.Read(buf);err!=nil{
-		return -1,errors.New("receive created data error")
-	}*/
+//	os.Remove(tmpfile)
+
 	result,_,err:=rb.ReadLine()
 	if(err!=nil){
 		return -1,errors.New("receive created data error")
@@ -96,7 +96,7 @@ func (info* PROJINFO)remoteCreate()(int , error){
 }
 
 func(info* PROJINFO)confirm() error{
-	fmt.Printf("Title: %s\nDescription: %s\nConclusion: %s\nPath:%s\nAre you sure?(yes)",info.Title,info.Descr,info.Conclude,info.Path)
+	fmt.Printf("Title: %s\nDescription: %s\nConclusion: %s\nPath:%s\nSize:%d\nAre you sure?(yes)",info.Title,info.Descr,info.Conclude,info.Path,info.Size)
 	c:="yes"
 	fmt.Scanf("%s",&c)
 	if c=="yes"{
@@ -134,10 +134,6 @@ func createInfo(path string, isdir bool) *PROJINFO{
 func doCreate(path string,isdir bool) (int,error){
 	// create object first
 	info:=createInfo(path,isdir)
-	if err:=info.confirm();err==nil{
-		return info.remoteCreate()
-	}else{
-		return -1,err
-	}
+	return info.remoteCreate()
 }
 
