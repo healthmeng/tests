@@ -15,13 +15,13 @@ var rsvr string ="123.206.55.31"
 var rport string =":8192"
 
 type PROJINFO struct{
-	Id int
+	Id int64
 	Title string
 	Atime string // always use database updatetime
 	Descr string
 	Conclude string
 	Path string
-	IsDir bool 
+	IsDir bool
 	Size int64
 }
 
@@ -36,7 +36,7 @@ func (info* PROJINFO)dumpInfo(){
 	fmt.Println("Size=",info.Size)
 }
 
-func (info* PROJINFO)remoteCreate()(int , error){
+func (info* PROJINFO)remoteCreate()(int64 , error){
 
 	conn,err:=net.Dial("tcp",rsvr+rport)
 	if err!=nil{
@@ -75,7 +75,7 @@ func (info* PROJINFO)remoteCreate()(int , error){
 
 // copy file
 	rd,_:=os.Open(tmpfile)
-	io.Copy(conn,rd)
+	io.CopyN(conn,rd,info.Size)
 	rd.Close()
 //	os.Remove(tmpfile)
 
@@ -88,7 +88,6 @@ func (info* PROJINFO)remoteCreate()(int , error){
 	}
 	len,_:=rb.Read(buf)
 	if err:=json.Unmarshal(buf[:len],info); err!=nil{
-		fmt.Println(string(buf[:len]))
 		return -1,errors.New("resolve remote data error")
 	}
 	info.dumpInfo()
@@ -107,17 +106,24 @@ func(info* PROJINFO)confirm() error{
 }
 
 func (info* PROJINFO)scanInfo(){
-	fmt.Printf("Title (default: %s):",info.Title)
-	fmt.Scanf("%s",&info.Title)
-	fmt.Printf("Description (default: %s)",info.Descr)
 	rd:=bufio.NewReader(os.Stdin)
+	fmt.Printf("Title (default: %s):",info.Title)
 	bt,_,_:=rd.ReadLine()
-	info.Descr=string(bt)
+	if len(bt)!=0{
+		info.Title=string(bt)
+	}
+	fmt.Printf("Description (default: %s)",info.Descr)
+	bt,_,_=rd.ReadLine()
+	if len(bt)!=0{
+		info.Descr=string(bt)
+	}
 //	fmt.Scanf("%s",&info.Descr)
 	fmt.Printf("Conclusion (default: %s)",info.Conclude)
 //	fmt.Scanf("%s",&info.Conclude)
 	bt,_,_=rd.ReadLine()
-	info.Conclude=string(bt)
+	if len(bt)!=0{
+		info.Conclude=string(bt)
+	}
 }
 
 func doList(){
@@ -131,7 +137,7 @@ func createInfo(path string, isdir bool) *PROJINFO{
 	return info
 }
 
-func doCreate(path string,isdir bool) (int,error){
+func doCreate(path string,isdir bool) (int64,error){
 	// create object first
 	info:=createInfo(path,isdir)
 	return info.remoteCreate()
