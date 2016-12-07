@@ -55,6 +55,7 @@ func procConn(conn net.Conn){
 			conn.Write([]byte("ERROR "+err.Error()))
 			return
 		}
+		// send objects back, client will dump them
 	default:
 		fmt.Println("Unknown command:",command)
 	}
