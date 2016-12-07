@@ -127,7 +127,7 @@ func (info* PROJINFO)scanInfo(){
 }
 
 func doList(){
-	fmt.Println("Do list")
+//	fmt.Println("Do list")
 	// query remote mariadb directly (first)
 }
 
