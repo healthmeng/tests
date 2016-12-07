@@ -19,9 +19,9 @@ func procConn(conn net.Conn){
 		fmt.Println("Read command error:",err)
 		return
 	}
-	proj:=new(backend.PROJINFO)
 	switch string(command){
 	case "Create":
+		proj:=new(backend.PROJINFO)
 		buf:=make([]byte,4096,4096)
 		if  len,err:=rd.Read(buf); err!=nil{
 			fmt.Println("Read create parameters error:",err)
@@ -46,6 +46,12 @@ func procConn(conn net.Conn){
 			conn.Write([]byte(ret))
 		}else{
 			fmt.Println("Create file error:",err)
+			conn.Write([]byte("ERROR "+err.Error()))
+			return
+		}
+	case "List":
+		projs,err:=backend.ListProj()
+		if err!=nil{
 			conn.Write([]byte("ERROR "+err.Error()))
 			return
 		}

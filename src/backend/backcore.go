@@ -19,6 +19,15 @@ type PROJINFO struct{
 	Size int64
 }
 
+func ListProj()([]PROJINFO,error){
+	rows,err:=GetDBRows()
+	if err!=nil{
+		fmt.Println("Get database rows error")
+		return nil,err
+	}
+	projs:=make([]PROJINFO,rows,rows)
+	return projs,nil
+}
 
 func (info* PROJINFO) CreateInDB() error{
 	db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
