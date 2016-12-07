@@ -26,6 +26,11 @@ func ListProj()([]PROJINFO,error){
 		return nil,err
 	}
 	projs:=make([]PROJINFO,rows,rows)
+	err=GetProjs(projs)
+	if err!=nil{
+		fmt.Println("Get database proj list error")
+		return nil,err
+	}
 	return projs,nil
 }
 
