@@ -31,9 +31,10 @@ func (info* PROJINFO)dumpInfo(){
 	fmt.Println("Atime=",info.Atime)
 	fmt.Println("Descr=",info.Descr)
 	fmt.Println("Conclude=",info.Conclude)
-	fmt.Println("Path=",info.Path)
-	fmt.Println("IsDir=",info.IsDir)
+//	fmt.Println("Path=",info.Path)
+//	fmt.Println("IsDir=",info.IsDir)
 	fmt.Println("Size=",info.Size)
+	fmt.Println("")
 }
 
 func (info* PROJINFO)remoteCreate()(int64 , error){
@@ -131,10 +132,33 @@ func doList(){
 	// query remote mariadb directly (first)
     conn,err:=net.Dial("tcp",rsvr+rport)
     if err!=nil{
-        return -1,err
+		fmt.Println("connect to server error")
+        return
     }
     defer conn.Close()
-	
+
+	conn.Write([]byte("List\n"))
+	rb:=bufio.NewReader(conn)
+	line,_,_:=rb.ReadLine()
+	var nObj int64
+	if _,err:=fmt.Sscanf(string(line),"%d",&nObj);err!=nil{
+		fmt.Println("Parse obj number error")
+		return
+	}
+	obj:=new(PROJINFO)
+	var i int64
+	for i=1;i<nObj;i++{
+		line,_,err=rb.ReadLine()
+		if err!=nil{
+			fmt.Println("Get remote date error:",err.Error())
+			break;
+		}
+		if err:=json.Unmarshal(line,obj); err!=nil{
+			fmt.Println("Resolve obj error:\n",string(line),"\n",err)
+		}else{
+			obj.dumpInfo()
+		}
+	}
 }
 
 func createInfo(path string, isdir bool) *PROJINFO{
