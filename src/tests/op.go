@@ -129,6 +129,12 @@ func (info* PROJINFO)scanInfo(){
 func doList(){
 //	fmt.Println("Do list")
 	// query remote mariadb directly (first)
+    conn,err:=net.Dial("tcp",rsvr+rport)
+    if err!=nil{
+        return -1,err
+    }
+    defer conn.Close()
+	
 }
 
 func createInfo(path string, isdir bool) *PROJINFO{
