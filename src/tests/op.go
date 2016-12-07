@@ -37,6 +37,7 @@ func (info* PROJINFO)dumpInfo(){
 }
 
 func (info* PROJINFO)remoteCreate()(int64 , error){
+
 	conn,err:=net.Dial("tcp",rsvr+rport)
 	if err!=nil{
 		return -1,err
@@ -126,14 +127,8 @@ func (info* PROJINFO)scanInfo(){
 }
 
 func doList(){
-//	fmt.Println("Do list")
+	fmt.Println("Do list")
 	// query remote mariadb directly (first)
-	conn,err:=net.Dial("tcp",rsvr+rport)
-	if err!=nil{
-		return -1,err
-	}
-	defer conn.Close()
-	rb:=bufio.NewReader(conn)
 }
 
 func createInfo(path string, isdir bool) *PROJINFO{
