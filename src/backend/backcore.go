@@ -20,16 +20,28 @@ type PROJINFO struct{
 }
 
 func ListProj()([]PROJINFO,error){
-	rows,err:=GetDBRows()
-	if err!=nil{
-		fmt.Println("Get database rows error")
+    db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
+    if err!=nil{
+        fmt.Println("Open database failed")
+        return nil,err
+    }
+    defer db.Close()
+    query:="select count(*) as value from proj" ;
+	var rows int64
+    if err:=db.QueryRow(query).Scan(&rows);err!=nil{
+		fmt.Println("Query rows error")
 		return nil,err
 	}
+	query="select * from proj"
 	projs:=make([]PROJINFO,rows,rows)
-	err=GetProjs(projs)
-	if err!=nil{
-		fmt.Println("Get database proj list error")
-		return nil,err
+	res,_:=db.Query(query)
+	defer res.Close()
+	for i:=0;res.Next();i++{
+		projs[i].IsDir=true
+		err=res.Scan(&projs[i].Id,&projs[i].Title,&projs[i].Descr,&projs[i].Atime,&projs[i].Conclude,&projs[i].Size)
+		if err!=nil{
+			return nil,err
+		}
 	}
 	return projs,nil
 }

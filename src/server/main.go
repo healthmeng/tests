@@ -55,7 +55,13 @@ func procConn(conn net.Conn){
 			conn.Write([]byte("ERROR "+err.Error()))
 			return
 		}
-		// send objects back, client will dump them
+		objs:=len(projs)
+		conn.Write([]byte(fmt.Sprintf("%d\n",objs)))
+		for i:=1;i<objs;i++{
+			objbuf,_:=json.Marshal(projs[i])
+			line:=string(objbuf)+"\n"
+			conn.Write([]byte(line))
+		}
 	default:
 		fmt.Println("Unknown command:",command)
 	}
