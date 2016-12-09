@@ -31,7 +31,7 @@ func (info* PROJINFO)dumpInfo(){
 	fmt.Println("Atime=",info.Atime)
 	fmt.Println("Descr=",info.Descr)
 	fmt.Println("Conclude=",info.Conclude)
-//	fmt.Println("Path=",info.Path)
+	fmt.Println("Path=",info.Path)
 //	fmt.Println("IsDir=",info.IsDir)
 	fmt.Println("Size=",info.Size)
 	fmt.Println("")
@@ -136,7 +136,7 @@ func doList(){
         return
     }
     defer conn.Close()
-
+fmt.Println("Start write")
 	conn.Write([]byte("List\n"))
 	rb:=bufio.NewReader(conn)
 	line,_,_:=rb.ReadLine()
@@ -145,17 +145,19 @@ func doList(){
 		fmt.Println("Parse obj number error")
 		return
 	}
+fmt.Println("Start list proj",nObj)
 	obj:=new(PROJINFO)
 	var i int64
-	for i=1;i<nObj;i++{
+	for i=0;i<nObj;i++{
 		line,_,err=rb.ReadLine()
 		if err!=nil{
-			fmt.Println("Get remote date error:",err.Error())
+			fmt.Println("Get remote data error:",err.Error())
 			break;
 		}
 		if err:=json.Unmarshal(line,obj); err!=nil{
 			fmt.Println("Resolve obj error:\n",string(line),"\n",err)
 		}else{
+fmt.Println("Start dump")
 			obj.dumpInfo()
 		}
 	}
