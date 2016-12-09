@@ -169,6 +169,41 @@ func createInfo(path string, isdir bool) *PROJINFO{
 	return info
 }
 
+func ParseInput(conn net.Conn){
+	input:=bufio.NewReader(os.Stdin)
+	for{
+		line,_,_:=input.ReadLine()
+		if _,err:=conn.Write(line);err!=nil{
+			break
+		}
+	}
+}
+
+func doRun(id int64){
+    conn,err:=net.Dial("tcp",rsvr+rport)
+    if err!=nil{
+        fmt.Println("connect to server error")
+        return
+    }
+    defer conn.Close()
+	conn.Write([]byte(fmt.Sprintf("Run\n%d",id)))
+	rd:=bufio.NewReader(conn)
+	// concurrent process intput and output
+	go ParseInput(conn)
+	for{
+		line,isline,err:=rd.ReadLine()
+		if err!=nil{
+			break
+		}else{
+			if isline{
+				fmt.Println(string(line))
+			}else{
+				fmt.Print(string(line))
+			}
+		}
+	}
+}
+
 func doCreate(path string,isdir bool) (int64,error){
 	// create object first
 	info:=createInfo(path,isdir)
