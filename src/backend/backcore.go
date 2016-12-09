@@ -5,6 +5,7 @@ _"github.com/Go-SQL-Driver/MySQL"
 "database/sql"
 "fmt"
 "time"
+"os/exec"
 )
 
 
@@ -17,6 +18,10 @@ type PROJINFO struct{
 	Path string
 	IsDir bool
 	Size int64
+}
+
+func RunID(id int64)(cmd *exec.Cmd,err error){
+	return nil,nil
 }
 
 func ListProj()([]PROJINFO,error){

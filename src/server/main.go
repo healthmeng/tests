@@ -3,6 +3,7 @@ package main
 import (
 "fmt"
 "net"
+//"sync"
 "os/exec"
 "bufio"
 "io"
@@ -61,6 +62,30 @@ func procConn(conn net.Conn){
 			objbuf,_:=json.Marshal(projs[i])
 			line:=string(objbuf)+"\n"
 			conn.Write([]byte(line))
+		}
+	case "Run":
+		bufid:=make([]byte,10,10)
+		if nRd,err:=rd.Read(bufid);err!=nil{
+			fmt.Println("Read id error",err)
+//			conn.Write([]byte("ERROR "+err.Error())) // need not,since read error already
+			return
+		}else{
+			var nID int64
+			_,err:=fmt.Sscanf(string(bufid[:nRd]),"%d",&nID)
+			cmd,err:=backend.RunID(nID) // cmd.Start
+			// concurrent input and output
+			if err!=nil{
+				fmt.Println("Run command error:",err)
+				conn.Write([]byte("ERROR "+err.Error()))
+				return
+			}
+			cmd.Wait()
+/*			var lk sync.Mutex
+			go  procInput(cmd,conn,&lk)
+			go  waitFinished(cmd,&lk)
+			for{
+				
+			}*/
 		}
 	default:
 		fmt.Println("Unknown command:",command)
