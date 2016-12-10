@@ -31,7 +31,7 @@ func (info* PROJINFO)dumpInfo(){
 	fmt.Println("Atime=",info.Atime)
 	fmt.Println("Descr=",info.Descr)
 	fmt.Println("Conclude=",info.Conclude)
-//	fmt.Println("Path=",info.Path)
+	fmt.Println("Path=",info.Path)
 //	fmt.Println("IsDir=",info.IsDir)
 	fmt.Println("Size=",info.Size)
 	fmt.Println("")
@@ -134,7 +134,7 @@ func doList(){
         return
     }
     defer conn.Close()
-
+fmt.Println("Start write")
 	conn.Write([]byte("List\n"))
 	rb:=bufio.NewReader(conn)
 	line,_,_:=rb.ReadLine()
@@ -143,17 +143,19 @@ func doList(){
 		fmt.Println("Parse obj number error")
 		return
 	}
+fmt.Println("Start list proj",nObj)
 	obj:=new(PROJINFO)
 	var i int64
-	for i=1;i<nObj;i++{
+	for i=0;i<nObj;i++{
 		line,_,err=rb.ReadLine()
 		if err!=nil{
-			fmt.Println("Get remote date error:",err.Error())
+			fmt.Println("Get remote data error:",err.Error())
 			break;
 		}
 		if err:=json.Unmarshal(line,obj); err!=nil{
 			fmt.Println("Resolve obj error:\n",string(line),"\n",err)
 		}else{
+fmt.Println("Start dump")
 			obj.dumpInfo()
 		}
 	}
@@ -163,6 +165,41 @@ func createInfo(path string, isdir bool) *PROJINFO{
 	info:=&PROJINFO{-1,"noname","atime","No comment.","No explain,obviously.",path,isdir,0}
 	info.scanInfo()
 	return info
+}
+
+func ParseInput(conn net.Conn){
+	input:=bufio.NewReader(os.Stdin)
+	for{
+		line,_,_:=input.ReadLine()
+		if _,err:=conn.Write(line);err!=nil{
+			break
+		}
+	}
+}
+
+func doRun(id int64){
+    conn,err:=net.Dial("tcp",rsvr+rport)
+    if err!=nil{
+        fmt.Println("connect to server error")
+        return
+    }
+    defer conn.Close()
+	conn.Write([]byte(fmt.Sprintf("Run\n%d",id)))
+	rd:=bufio.NewReader(conn)
+	// concurrent process intput and output
+	go ParseInput(conn)
+	for{
+		line,isline,err:=rd.ReadLine()
+		if err!=nil{
+			break
+		}else{
+			if isline{
+				fmt.Println(string(line))
+			}else{
+				fmt.Print(string(line))
+			}
+		}
+	}
 }
 
 func doCreate(path string,isdir bool) (int64,error){
