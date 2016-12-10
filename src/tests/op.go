@@ -128,8 +128,6 @@ func (info* PROJINFO)scanInfo(){
 }
 
 func doList(){
-//	fmt.Println("Do list")
-	// query remote mariadb directly (first)
     conn,err:=net.Dial("tcp",rsvr+rport)
     if err!=nil{
 		fmt.Println("connect to server error")
