@@ -170,7 +170,7 @@ func createInfo(path string, isdir bool) *PROJINFO{
 func ParseInput(conn net.Conn){
 	input:=bufio.NewReader(os.Stdin)
 	for{
-		line,_,_:=input.ReadLine()
+		line,_:=input.ReadSlice('\n')
 		if _,err:=conn.Write(line);err!=nil{
 			break
 		}
