@@ -189,14 +189,14 @@ func doRun(id int64){
 	// concurrent process intput and output
 	go ParseInput(conn)
 	for{
-		line,isline,err:=rd.ReadLine()
+		line,longline,err:=rd.ReadLine()
 		if err!=nil{
 			break
 		}else{
-			if isline{
-				fmt.Println(string(line))
-			}else{
+			if longline{
 				fmt.Print(string(line))
+			}else{
+				fmt.Println(string(line))
 			}
 		}
 	}
