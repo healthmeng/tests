@@ -5,6 +5,7 @@ _"github.com/Go-SQL-Driver/MySQL"
 "database/sql"
 "fmt"
 "time"
+"os/exec"
 )
 
 
@@ -17,6 +18,13 @@ type PROJINFO struct{
 	Path string
 	IsDir bool
 	Size int64
+}
+
+func RunID(id int64)(cmd *exec.Cmd,err error){
+	cmd=exec.Command("/tmp/deploy")
+	//return nil,nil
+	err=nil
+	return
 }
 
 func ListProj()([]PROJINFO,error){
@@ -38,7 +46,7 @@ func ListProj()([]PROJINFO,error){
 	defer res.Close()
 	for i:=0;res.Next();i++{
 		projs[i].IsDir=true
-		err=res.Scan(&projs[i].Id,&projs[i].Title,&projs[i].Descr,&projs[i].Atime,&projs[i].Conclude,&projs[i].Size)
+		err=res.Scan(&projs[i].Id,&projs[i].Title,&projs[i].Descr,&projs[i].Atime,&projs[i].Conclude,&projs[i].Size,&projs[i].Path)
 		if err!=nil{
 			return nil,err
 		}
@@ -56,7 +64,7 @@ func (info* PROJINFO) CreateInDB() error{
 	tm:=time.Now().Local()
 	info.Atime=fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d",tm.Year(),tm.Month(),tm.Day(),tm.Hour(),tm.Minute(),tm.Second())
 //	st,err:=db.Prepare("insert proj set title=?,descr=?,projtime=?,conclude=?,
-	query:=fmt.Sprintf("insert into proj (title,descr,projtime,conclude,fsize) values ('%s','%s','%s','%s',%d)",info.Title,info.Descr,info.Atime,info.Conclude,info.Size)
+	query:=fmt.Sprintf("insert into proj (title,descr,projtime,conclude,fsize,path) values ('%s','%s','%s','%s',%d,'%s')",info.Title,info.Descr,info.Atime,info.Conclude,info.Size,info.Path)
 	if result,err:=db.Exec(query);err==nil{
 		info.Id,_=result.LastInsertId()
 		return nil
