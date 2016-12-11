@@ -5,6 +5,7 @@ import (
 "net"
 //"sync"
 "os/exec"
+"time"
 "bufio"
 "io"
 "os"
@@ -79,17 +80,53 @@ func procConn(conn net.Conn){
 				conn.Write([]byte("ERROR "+err.Error()))
 				return
 			}
+			//outch:=make(chan string,5)
+			//waitch:=make(chan int,1)
+			outp,_:=cmd.StdoutPipe()
+			inputp,_:=cmd.StdinPipe()
+			go sendOutput(outp,conn)
+			go getInput(inputp,rd)
+			if err:=cmd.Start();err!=nil{
+				fmt.Println("Start program error")
+				return
+			}
 			cmd.Wait()
-/*			var lk sync.Mutex
-			go  procInput(cmd,conn,&lk)
-			go  waitFinished(cmd,&lk)
-			for{
-				
-			}*/
+			time.Sleep(500*time.Millisecond)
 		}
 	default:
 		fmt.Println("Unknown command:",command)
 	}
+}
+
+func sendOutput(outp io.ReadCloser,conn net.Conn){
+	defer outp.Close()
+	buf:=make([]byte,1024,4096)
+	for{
+		n,err:=outp.Read(buf)
+		if err!=nil{
+			//fmt.Println("Read pipe over:",err)
+			break
+		}else{
+			if _,err:=conn.Write(buf[:n]);err!=nil{
+			//	fmt.Println("Send output to client failed:",err)
+				break
+			}
+		}
+	}
+//	fmt.Println("End output routin")
+}
+
+func getInput(inp io.WriteCloser, rd *bufio.Reader){
+	defer inp.Close()
+	for{
+		if line,err:=rd.ReadSlice('\n');err!=nil{
+//			fmt.Println("Get remote input failed:",err)
+			break
+		}else{
+			inp.Write(line)
+		}
+	}
+//	fmt.Println("End input routin")
 }
 
 func main(){

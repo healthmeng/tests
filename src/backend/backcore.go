@@ -21,7 +21,10 @@ type PROJINFO struct{
 }
 
 func RunID(id int64)(cmd *exec.Cmd,err error){
-	return nil,nil
+	cmd=exec.Command("/tmp/deploy")
+	//return nil,nil
+	err=nil
+	return
 }
 
 func ListProj()([]PROJINFO,error){
