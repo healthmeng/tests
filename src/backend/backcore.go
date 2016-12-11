@@ -28,7 +28,8 @@ func RunID(id int64)(cmd *exec.Cmd,err error){
 }
 
 func ListProj()([]PROJINFO,error){
-    db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
+    db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests") //?charset=utf8")
+    //db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
     if err!=nil{
         fmt.Println("Open database failed")
         return nil,err
@@ -55,12 +56,14 @@ func ListProj()([]PROJINFO,error){
 }
 
 func (info* PROJINFO) CreateInDB() error{
-	db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
+	db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests") 
+	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")  // this will get messed code in Chinese
 	if err!=nil{
 		fmt.Println("Open database failed")
 		return err
 	}
 	defer db.Close()
+	fmt.Println("Title=",info.Title)
 	tm:=time.Now().Local()
 	info.Atime=fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d",tm.Year(),tm.Month(),tm.Day(),tm.Hour(),tm.Minute(),tm.Second())
 //	st,err:=db.Prepare("insert proj set title=?,descr=?,projtime=?,conclude=?,
