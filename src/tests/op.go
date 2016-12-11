@@ -134,7 +134,6 @@ func doList(){
         return
     }
     defer conn.Close()
-fmt.Println("Start write")
 	conn.Write([]byte("List\n"))
 	rb:=bufio.NewReader(conn)
 	line,_,_:=rb.ReadLine()
@@ -143,7 +142,6 @@ fmt.Println("Start write")
 		fmt.Println("Parse obj number error")
 		return
 	}
-fmt.Println("Start list proj",nObj)
 	obj:=new(PROJINFO)
 	var i int64
 	for i=0;i<nObj;i++{
@@ -155,7 +153,6 @@ fmt.Println("Start list proj",nObj)
 		if err:=json.Unmarshal(line,obj); err!=nil{
 			fmt.Println("Resolve obj error:\n",string(line),"\n",err)
 		}else{
-fmt.Println("Start dump")
 			obj.dumpInfo()
 		}
 	}
