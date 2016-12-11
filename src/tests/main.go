@@ -64,6 +64,16 @@ func delProj(){
 
 func runProj(){
     fmt.Println("run:")
+	if(len(os.Args)!=3){
+        prtUsage()
+	}else{
+		var id int64
+		if _,err:=fmt.Sscanf(os.Args[2],"%d",&id);err!=nil{
+			fmt.Println("Bad parameter:", os.Args[2])
+			return
+		}
+		doRun(id)
+	}
 }
 
 
