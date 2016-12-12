@@ -7,6 +7,7 @@ _"github.com/Go-SQL-Driver/MySQL"
 "time"
 "io"
 "os/exec"
+"errors"
 )
 
 
@@ -32,8 +33,32 @@ func waitOut(chok chan int,cmd *exec.Cmd){
 }
 
 // todo: lookforID, createImage,
+func lookforID(id int64)(*PROJINFO, error){
+    db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests") 
+    if err!=nil{
+        fmt.Println("Open database failed")
+        return nil,err
+    }
+    defer db.Close()
+    query=fmt.Sprintf("select * from proj where proj_id=%d",id)
+    proj:=new PROJINFO
+    res,_:=db.Query(query)
+    defer res.Close()
+	if res.Next(){
+        if err:=res.Scan(proj.Id,&proj.Title,&proj.Descr,&proj.Atime,&proj.Conclude,&proj.Size,&proj.Path):err!=nil{
+            return nil,err
+		}
+	}else{
+			return nil,errors.New("Can't find record in db")
+	}
+	return proj,nil
+}
 
-func RunID(id int64,rio Redirect)(chan int ,error){
+func (proj* PROJINFO)createContainer()(string,*exec.Cmd,error){
+
+}
+
+funy RunID(id int64,rio Redirect)(chan int ,error){
 	chout:=make(chan int,1)
 	chok:=make(chan int,1)
 //	cmd:=exec.Command("/tmp/deploy")
