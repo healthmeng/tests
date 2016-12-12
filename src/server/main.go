@@ -5,13 +5,18 @@ import (
 "net"
 //"sync"
 "os/exec"
-"time"
+//"time"
 "bufio"
 "io"
 "os"
 "backend"
 "encoding/json"
 )
+
+type RemoteIO struct{
+	rdr *bufio.Reader
+	wtr net.Conn
+}
 
 func procConn(conn net.Conn){
 	defer conn.Close()
@@ -73,16 +78,19 @@ func procConn(conn net.Conn){
 		}else{
 			var nID int64
 			_,err:=fmt.Sscanf(string(bufid[:nRd]),"%d",&nID)
-			cmd,err:=backend.RunID(nID) // cmd.Start
+			rio:=&RemoteIO{rdr:rd,wtr:conn}
+			chout,err:=backend.RunID(nID,rio) // cmd.Start
 			// concurrent input and output
 			if err!=nil{
 				fmt.Println("Run command error:",err)
 				conn.Write([]byte("ERROR "+err.Error()))
 				return
+			}else{
+				<-chout
 			}
 			//outch:=make(chan string,5)
 			//waitch:=make(chan int,1)
-			outp,_:=cmd.StdoutPipe()
+/*			outp,_:=cmd.StdoutPipe()
 			inputp,_:=cmd.StdinPipe()
 			go sendOutput(outp,conn)
 			go getInput(inputp,rd)
@@ -91,14 +99,15 @@ func procConn(conn net.Conn){
 				return
 			}
 			cmd.Wait()
-			time.Sleep(500*time.Millisecond)
+			time.Sleep(500*time.Millisecond)*/
+			
 		}
 	default:
 		fmt.Println("Unknown command:",command)
 	}
 }
 
-func sendOutput(outp io.ReadCloser,conn net.Conn){
+func (r *RemoteIO) SendOutput(outp io.ReadCloser){
 	defer outp.Close()
 	buf:=make([]byte,1024,4096)
 	for{
@@ -107,7 +116,7 @@ func sendOutput(outp io.ReadCloser,conn net.Conn){
 			//fmt.Println("Read pipe over:",err)
 			break
 		}else{
-			if _,err:=conn.Write(buf[:n]);err!=nil{
+			if _,err:=r.wtr.Write(buf[:n]);err!=nil{
 			//	fmt.Println("Send output to client failed:",err)
 				break
 			}
@@ -116,10 +125,10 @@ func sendOutput(outp io.ReadCloser,conn net.Conn){
 //	fmt.Println("End output routin")
 }
 
-func getInput(inp io.WriteCloser, rd *bufio.Reader){
+func (r *RemoteIO)GetInput(inp io.WriteCloser){
 	defer inp.Close()
 	for{
-		if line,err:=rd.ReadSlice('\n');err!=nil{
+		if line,err:=r.rdr.ReadSlice('\n');err!=nil{
 //			fmt.Println("Get remote input failed:",err)
 			break
 		}else{

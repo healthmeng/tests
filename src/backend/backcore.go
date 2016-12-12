@@ -5,6 +5,7 @@ _"github.com/Go-SQL-Driver/MySQL"
 "database/sql"
 "fmt"
 "time"
+"io"
 "os/exec"
 )
 
@@ -20,11 +21,28 @@ type PROJINFO struct{
 	Size int64
 }
 
-func RunID(id int64)(cmd *exec.Cmd,err error){
-	cmd=exec.Command("/tmp/deploy")
-	//return nil,nil
-	err=nil
-	return
+type Redirect interface{
+	GetInput(inpipe io.WriteCloser)// get remote input
+	SendOutput(outpipe io.ReadCloser) // get local output
+}
+
+func waitOut(chout chan int,cmd *exec.Cmd){
+	cmd.Wait()
+	chout<-0
+}
+
+func RunID(id int64,rio Redirect)(chan int ,error){
+	chout:=make(chan int,1)
+	cmd:=exec.Command("/tmp/deploy")
+	outp,_:=cmd.StdoutPipe()
+	inp,_:=cmd.StdinPipe()
+	go rio.SendOutput(outp)
+	go rio.GetInput(inp)
+	if err:=cmd.Start();err!=nil{
+	  return chout,err
+	}
+	go waitOut(chout,cmd)
+	return chout,nil
 }
 
 func ListProj()([]PROJINFO,error){
