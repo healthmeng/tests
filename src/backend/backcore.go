@@ -31,9 +31,21 @@ func waitOut(chout chan int,cmd *exec.Cmd){
 	chout<-0
 }
 
+// todo: lookforID, createImage,
+
 func RunID(id int64,rio Redirect)(chan int ,error){
 	chout:=make(chan int,1)
-	cmd:=exec.Command("/tmp/deploy")
+//	cmd:=exec.Command("/tmp/deploy")
+	proj,err:=lookforID(id)
+	if err!=nil{
+		fmt.Println("Can't find project-- id:",id)
+		return chout,err
+	}
+	cid,cmd,err:=proj.createContainer() // create container,copy file, return container (id string), and prepare run
+	if err!=nil{
+		fmt.Println("Prepare run command error:",err)
+		return  chout,err
+	}
 	outp,_:=cmd.StdoutPipe()
 	inp,_:=cmd.StdinPipe()
 	go rio.SendOutput(outp)
@@ -42,7 +54,12 @@ func RunID(id int64,rio Redirect)(chan int ,error){
 	  return chout,err
 	}
 	go waitOut(chout,cmd)
+	go procTimeout(cid)
 	return chout,nil
+}
+
+func procTimeout(cid string){
+	// sleep xx second and kill container
 }
 
 func ListProj()([]PROJINFO,error){
