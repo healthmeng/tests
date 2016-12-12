@@ -26,15 +26,16 @@ type Redirect interface{
 	SendOutput(outpipe io.ReadCloser) // get local output
 }
 
-func waitOut(chout chan int,cmd *exec.Cmd){
+func waitOut(chok chan int,cmd *exec.Cmd){
 	cmd.Wait()
-	chout<-0
+	chok<-0
 }
 
 // todo: lookforID, createImage,
 
 func RunID(id int64,rio Redirect)(chan int ,error){
 	chout:=make(chan int,1)
+	chok:=make(chan int,1)
 //	cmd:=exec.Command("/tmp/deploy")
 	proj,err:=lookforID(id)
 	if err!=nil{
@@ -53,13 +54,23 @@ func RunID(id int64,rio Redirect)(chan int ,error){
 	if err:=cmd.Start();err!=nil{
 	  return chout,err
 	}
-	go waitOut(chout,cmd)
-	go procTimeout(cid)
+	go waitOut(chok,cmd)
+	go procTimeout(cid,chok,chout)
 	return chout,nil
 }
 
-func procTimeout(cid string){
+func procTimeout(cid string,chok , chout chan int){
 	// sleep xx second and kill container
+	select{
+		case <-chok:
+			// nothing, process quit normally
+		case <-time.After(time.Second*60):
+			// time out, kill container
+	}
+	// delete cid container
+
+	// inform server process over
+		chout<-1
 }
 
 func ListProj()([]PROJINFO,error){
