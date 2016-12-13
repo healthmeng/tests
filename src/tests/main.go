@@ -67,7 +67,6 @@ func getProj(){
 }
 
 func runProj(){
-    fmt.Println("run:")
 	if(len(os.Args)!=3){
         prtUsage()
 	}else{
