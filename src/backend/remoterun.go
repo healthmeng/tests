@@ -2,6 +2,7 @@ package backend
 
 import (
 "fmt"
+"strings"
 "errors"
 "time"
 "io"
@@ -23,7 +24,6 @@ func waitOut(chok chan int,cmd *exec.Cmd){
 func RunID(id int64,rio Redirect)(chan int ,error){
 	chout:=make(chan int,1)
 	chok:=make(chan int,1)
-//	cmd:=exec.Command("/tmp/deploy")
 	proj,err:=lookforID(id)
 	if err!=nil{
 		fmt.Println("Can't find project-- id:",id)
@@ -48,14 +48,16 @@ func RunID(id int64,rio Redirect)(chan int ,error){
 
 func procTimeout(cid string,chok , chout chan int){
 	// sleep xx second and kill container
+	normal:=true
 	select{
 		case <-chok:
 			// nothing, process quit normally
-		case <-time.After(time.Second*60):
+		case <-time.After(time.Second*30):
+			normal=false;
 			// time out, kill container
 	}
 	// delete cid container
-		if err:=removeContainer(cid);err!=nil{
+		if err:=removeContainer(cid,normal);err!=nil{
 			fmt.Println("Remove container error:",err)
 		}
 	// inform server, process over
@@ -63,34 +65,39 @@ func procTimeout(cid string,chok , chout chan int){
 }
 
 
-func (proj* PROJINFO)Uncompress()(string,error){
+func (proj* PROJINFO)Uncompress()(string,string,error){// abs path & final name
 	basePath:=fmt.Sprintf("/opt/testssvr/%d/",proj.Id)
 	srcPath:=basePath+"proj.tgz"
 	if _,err:=os.Stat(srcPath);err!=nil{
-		return "",errors.New("Can't find "+srcPath)
+		return "","",errors.New("Can't find "+srcPath)
 	}
-	cmd:=exec.Command(fmt.Sprintf("tar xzvf %s -C %s",srcPath,basePath))
+	cmd:=exec.Command("tar","xzvf",srcPath,"-C",basePath)
 	if err:=cmd.Run();err!=nil{
 		fmt.Println("tar proj.tgz error:",err)
-		return "",err
+		return "","",err
 	}
 	dstPath:=basePath+proj.Path
 	finfo,err:=os.Stat(dstPath)
 	if err!=nil{
 		fmt.Println(dstPath, "not found, check your tar parameters.")
-		return dstPath,err
+		return dstPath,finfo.Name(),err
 	}
 	proj.IsDir=finfo.IsDir()
-	return dstPath,nil
+	return dstPath,finfo.Name(),nil
 }
 
-func removeContainer(cid string) error{
-	cmd:=exec.Command("docker rm "+cid)
+func removeContainer(cid string, exited bool) error{
+	if !exited{
+		cmd:=exec.Command("docker","kill",cid)
+		cmd.Run()
+	}
+	// if kill failed, still need to try  rm
+	cmd:=exec.Command("docker", "rm",cid)
 	return cmd.Run()
 }
 
 func (proj* PROJINFO)createContainer()(string,*exec.Cmd,error){
-	obsPath,err:=proj.Uncompress()  // uncompress, stat(isdir),return obsolute path
+	obsPath,fName,err:=proj.Uncompress()  // uncompress, stat(isdir),return obsolute path
 	if(err!=nil){
 		fmt.Println("Uncompress proj.tgz error",err)
 		return "",nil,err
@@ -101,8 +108,8 @@ func (proj* PROJINFO)createContainer()(string,*exec.Cmd,error){
 	if proj.IsDir{
 		if finfo,err:=os.Stat(obsPath+"/run");err==nil{	// host path
 			if !finfo.IsDir() && (finfo.Mode() &0700 !=0){
-				ctrun="/tmp/"+proj.Path+"/run"	// guest path
-				ctwork="/tmp/"+proj.Path
+				ctrun="/tmp/"+fName+"/run"	// guest path
+				ctwork="/tmp/"+fName
 			}
 		}else{
 			return "",nil,errors.New("File 'run' not found in your directory.")
@@ -113,20 +120,22 @@ func (proj* PROJINFO)createContainer()(string,*exec.Cmd,error){
 	if ctrun==""{
 		return "",nil,errors.New("Can not run because of incorrect perm or directory structure")
 	}
-	// docker create -i -t devel: get id
-	crcmd:=exec.Command("docker create -i -t devel -w "+ctwork+" "+ctrun) // add run command, workdir
+	// docker create -i -w  workdir devel /bin/bash -c cmd ,return : get vmid
+		crcmd:=exec.Command("docker","create","-i","-w",ctwork,"devel","/bin/bash","-c",ctrun) //if add "-t",input message will loop to output again
+		//crcmd:=exec.Command("docker","create","-i","-t","-w",ctwork,"devel","/bin/bash","-c",ctrun) // add run command, workdir
 	outbyte,err:=crcmd.Output()
-	ctid:=string(outbyte)
 	if err!=nil{
-		fmt.Println("Create contailer error:",err)
+		fmt.Println("Create container error:",err)
 		return "",nil,err
 	}
-	crcmd=exec.Command("docker cp "+obsPath+" "+ctid+":/tmp")
+	ctid:=strings.Replace(string(outbyte),"\n","",-1)
+	ctid=strings.Replace(ctid,"\r","",-1)
+	crcmd=exec.Command("docker","cp",obsPath,ctid+":/tmp")
 	if err:=crcmd.Run();err!=nil{
 		fmt.Println("docker cp error:",err)
 		return "",nil,err
 	}
-	crcmd=exec.Command("docker start -a -i "+ctid)
+	crcmd=exec.Command("docker","start", "-i",ctid)
 	return ctid,crcmd,nil
 }
 

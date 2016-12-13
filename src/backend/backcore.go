@@ -32,7 +32,8 @@ func lookforID(id int64)(*PROJINFO, error){
     res,_:=db.Query(query)
     defer res.Close()
 	if res.Next(){
-        if err:=res.Scan(proj.Id,&proj.Title,&proj.Descr,&proj.Atime,&proj.Conclude,&proj.Size,&proj.Path);err!=nil{
+        if err:=res.Scan(&proj.Id,&proj.Title,&proj.Descr,&proj.Atime,&proj.Conclude,&proj.Size,&proj.Path);err!=nil{
+			fmt.Println("Scan error")
             return nil,err
 		}
 	}else{
@@ -77,7 +78,6 @@ func (info* PROJINFO) CreateInDB() error{
 		return err
 	}
 	defer db.Close()
-	fmt.Println("Title=",info.Title)
 	tm:=time.Now().Local()
 	info.Atime=fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d",tm.Year(),tm.Month(),tm.Day(),tm.Hour(),tm.Minute(),tm.Second())
 //	st,err:=db.Prepare("insert proj set title=?,descr=?,projtime=?,conclude=?,
