@@ -3,6 +3,7 @@ package main
 import (
 "fmt"
 "errors"
+"strings"
 "encoding/json"
 "os/exec"
 "net"
@@ -55,6 +56,20 @@ func (info* PROJINFO)remoteCreate()(int64 , error){
 	if err:=info.confirm();err!=nil{
 		return -1,err
 	}
+// parse path : first replace // with /, then remove anything before ../
+	path:=info.Path
+	for{
+		sp:=strings.Replace(path,"//","/",-1)
+		if sp!=path{
+			path=sp
+		}else{
+			info.Path=sp
+			break
+		}
+	}
+	strs:=strings.Split(info.Path,"../")
+	info.Path=strs[len(strs)-1]
+
 	// send object by json, then send file
 	var ctext string
 	if obj,err:=json.Marshal(info);err!=nil{
