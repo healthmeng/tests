@@ -6,17 +6,18 @@ import (
 )
 
 func prtUsage(){
-	fmt.Println("Tests is a tool for collecting your test codes and makes it easy for later review.")
-	fmt.Println("Usege:")
+	fmt.Println("Tests is a tool to collect your test codes and makes it easy for later review.")
+	fmt.Println("Usage:")
 	fmt.Println("\ttests command [args]")
 	fmt.Println("commands include:")
-	fmt.Println("\tcreate, -c dir|file: Create a test project.")
-	fmt.Println("\tlist, -l: List all test projects and their infomations(IDs may be most useful.")
-	fmt.Println("\tedit, -e proj_id: Edit an existing project's info.")
-	fmt.Println("\tupdate, -u proj_id [dir|file]: Update codes of an existing project.If path is not refered, try to use current dir.")
+	fmt.Println("\tcreate, -c dir|file: Create(upload) a test project.")
 	fmt.Println("\tdel, -d proj_id: Delete a project.")
-	fmt.Println("\tsearch, -s keyword1[, keyword2,keyword3...]: Search a project by keywords.")
+	fmt.Println("\tedit, -e proj_id: Edit an existing remote project's info.")
+	fmt.Println("\tget, -g proj_id: Download project(by proj_id) to current directory, all data compressed in proj.tgz")
+	fmt.Println("\tlist, -l: List all test projects and their infomations(IDs may be most useful).")
 	fmt.Println("\trun, -r proj_id: Run a proj, get commandline result.")
+	fmt.Println("\tsearch, -s keyword1[, keyword2,keyword3...]: Search a project by keywords.")
+	fmt.Println("\tupdate, -u proj_id [dir|file]: Update codes of an existing project.If path is not refered, try to use current dir.")
 }
 
 func tryCreate(){
@@ -61,6 +62,9 @@ func delProj(){
     fmt.Println("del:")
 }
 
+func getProj(){
+    fmt.Println("get:")
+}
 
 func runProj(){
     fmt.Println("run:")
@@ -117,6 +121,11 @@ func main(){
 			fallthrough
 		case "-r":
 			runProj()
+
+		case "get":
+			fallthrough
+		case "-g":
+			getProj()
 
 		default:
 			prtUsage()
