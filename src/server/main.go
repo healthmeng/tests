@@ -100,7 +100,6 @@ func procConn(conn net.Conn){
 			}
 			cmd.Wait()
 			time.Sleep(500*time.Millisecond)*/
-			
 		}
 	default:
 		fmt.Println("Unknown command:",command)
@@ -122,7 +121,6 @@ func (r *RemoteIO) SendOutput(outp io.ReadCloser){
 			}
 		}
 	}
-//	fmt.Println("End output routin")
 }
 
 func (r *RemoteIO)GetInput(inp io.WriteCloser){

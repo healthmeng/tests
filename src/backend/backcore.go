@@ -3,10 +3,8 @@ package backend
 import (
 _"github.com/Go-SQL-Driver/MySQL"
 "database/sql"
-"fmt"
 "time"
-"io"
-"os/exec"
+"fmt"
 "errors"
 )
 
@@ -22,80 +20,25 @@ type PROJINFO struct{
 	Size int64
 }
 
-type Redirect interface{
-	GetInput(inpipe io.WriteCloser)// get remote input
-	SendOutput(outpipe io.ReadCloser) // get local output
-}
-
-func waitOut(chok chan int,cmd *exec.Cmd){
-	cmd.Wait()
-	chok<-0
-}
-
-// todo: lookforID, createImage,
 func lookforID(id int64)(*PROJINFO, error){
-    db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests") 
+    db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests")
     if err!=nil{
         fmt.Println("Open database failed")
         return nil,err
     }
     defer db.Close()
-    query=fmt.Sprintf("select * from proj where proj_id=%d",id)
-    proj:=new PROJINFO
+    query:=fmt.Sprintf("select * from proj where proj_id=%d",id)
+    proj:=new(PROJINFO)
     res,_:=db.Query(query)
     defer res.Close()
 	if res.Next(){
-        if err:=res.Scan(proj.Id,&proj.Title,&proj.Descr,&proj.Atime,&proj.Conclude,&proj.Size,&proj.Path):err!=nil{
+        if err:=res.Scan(proj.Id,&proj.Title,&proj.Descr,&proj.Atime,&proj.Conclude,&proj.Size,&proj.Path);err!=nil{
             return nil,err
 		}
 	}else{
 			return nil,errors.New("Can't find record in db")
 	}
 	return proj,nil
-}
-
-func (proj* PROJINFO)createContainer()(string,*exec.Cmd,error){
-
-}
-
-funy RunID(id int64,rio Redirect)(chan int ,error){
-	chout:=make(chan int,1)
-	chok:=make(chan int,1)
-//	cmd:=exec.Command("/tmp/deploy")
-	proj,err:=lookforID(id)
-	if err!=nil{
-		fmt.Println("Can't find project-- id:",id)
-		return chout,err
-	}
-	cid,cmd,err:=proj.createContainer() // create container,copy file, return container (id string), and prepare run
-	if err!=nil{
-		fmt.Println("Prepare run command error:",err)
-		return  chout,err
-	}
-	outp,_:=cmd.StdoutPipe()
-	inp,_:=cmd.StdinPipe()
-	go rio.SendOutput(outp)
-	go rio.GetInput(inp)
-	if err:=cmd.Start();err!=nil{
-	  return chout,err
-	}
-	go waitOut(chok,cmd)
-	go procTimeout(cid,chok,chout)
-	return chout,nil
-}
-
-func procTimeout(cid string,chok , chout chan int){
-	// sleep xx second and kill container
-	select{
-		case <-chok:
-			// nothing, process quit normally
-		case <-time.After(time.Second*60):
-			// time out, kill container
-	}
-	// delete cid container
-
-	// inform server process over
-		chout<-1
 }
 
 func ListProj()([]PROJINFO,error){
@@ -106,7 +49,7 @@ func ListProj()([]PROJINFO,error){
         return nil,err
     }
     defer db.Close()
-    query:="select count(*) as value from proj" ;
+    query:="select count(*) as value from proj" 
 	var rows int64
     if err:=db.QueryRow(query).Scan(&rows);err!=nil{
 		fmt.Println("Query rows error")
