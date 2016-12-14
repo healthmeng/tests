@@ -120,11 +120,7 @@ func (proj* PROJINFO)createContainer(args []string)(string,*exec.Cmd,error){
 			return "",nil,errors.New("File 'run' not found in your directory.")
 		}
 	}else{// get postfix, and try to build them, then copy runable binary to container
-		srccmd,err:=runsrc.GetCmd(obsPath,args...)
-		if err!=nil{
-			fmt.Println("Get src process cmd error")
-			return "",nil,err
-		}
+		srccmd:=runsrc.GetCmd(obsPath,args...)
 		cmdfile,_:=os.Create(strcmdfile)
 		cmdfile.Write([]byte(srccmd))
 		cmdfile.Close()

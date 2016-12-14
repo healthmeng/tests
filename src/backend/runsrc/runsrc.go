@@ -1,8 +1,8 @@
 package runsrc
 
 import (
-//"fmt"
-"errors"
+"fmt"
+"os"
 )
 
 type SRCDETECT struct{
@@ -22,17 +22,19 @@ func init(){
 	handler=make([]SRCDETECT,0,50)
 }
 
-func GetCmd(srcname string, args ...string)(string,error){
+func GetCmd(srcname string, args ...string)string{
 	tp:=0
-	ret:=""
+	var ret string
+	info,_:=os.Stat(srcname)
+	filename:=info.Name()
 	for _,obj:=range(handler){
 		if tp=obj.CanProc(srcname);tp!=0{
-			ret=obj.GetRunString(tp,srcname,args...)
+			ret=fmt.Sprintf("echo \"Trying to run %s as %s code:\"\n",filename,obj.Detector)+obj.GetRunString(tp,srcname,args...)
 			break
 		}
 	}
 	if tp==0{
-		return "",errors.New("Can't find source code running policy")
+		ret=fmt.Sprintf("echo \"Don't know how to run %s\"",filename)
 	}
-	return ret,nil
+	return ret
 }
