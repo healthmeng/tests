@@ -15,7 +15,7 @@ func prtUsage(){
 	fmt.Println("\tedit, -e proj_id: Edit an existing remote project's info.")
 	fmt.Println("\tget, -g proj_id: Download project(by proj_id) to current directory, all data compressed in proj.tgz")
 	fmt.Println("\tlist, -l: List all test projects and their infomations(IDs may be most useful).")
-	fmt.Println("\trun, -r proj_id: Run a proj, get commandline result.")
+	fmt.Println("\trun, -r proj_id [arg1 arg2 arg3...]: Run a proj, get commandline result. The args are only valid when project is a single source file.")
 	fmt.Println("\tsearch, -s keyword1[, keyword2,keyword3...]: Search a project by keywords.")
 	fmt.Println("\tupdate, -u proj_id [dir|file]: Update codes of an existing project.If path is not refered, try to use current dir.")
 }
@@ -67,7 +67,8 @@ func getProj(){
 }
 
 func runProj(){
-	if(len(os.Args)!=3){
+	nArg:=len(os.Args)
+	if(nArg<3){
         prtUsage()
 	}else{
 		var id int64
@@ -75,7 +76,11 @@ func runProj(){
 			fmt.Println("Bad parameter:", os.Args[2])
 			return
 		}
-		doRun(id)
+		if nArg>3{
+			doRun(id,os.Args[3:])
+		}else{
+			doRun(id,nil)
+		}
 	}
 }
 
