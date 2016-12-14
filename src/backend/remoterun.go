@@ -8,6 +8,10 @@ import (
 "io"
 "os"
 "os/exec"
+"backend/runsrc"
+_"backend/rungo"
+_"backend/runcncpp"
+_"backend/runscript"
 )
 
 
@@ -21,7 +25,7 @@ func waitOut(chok chan int,cmd *exec.Cmd){
 	chok<-0 // inform timeout cleaner
 }
 
-func RunID(id int64,rio Redirect)(chan int ,error){
+func RunID(id int64,rio Redirect,params []string)(chan int ,error){
 	chout:=make(chan int,1)
 	chok:=make(chan int,1)
 	proj,err:=lookforID(id)
@@ -29,7 +33,7 @@ func RunID(id int64,rio Redirect)(chan int ,error){
 		fmt.Println("Can't find project-- id:",id)
 		return chout,err
 	}
-	cid,cmd,err:=proj.createContainer() // create container,copy file, return container (id string), and prepare run
+	cid,cmd,err:=proj.createContainer(params) // create container,copy file, return container (id string), and prepare run
 	if err!=nil{
 		fmt.Println("Prepare run command error:",err)
 		return  chout,err
@@ -96,7 +100,7 @@ func removeContainer(cid string, exited bool) error{
 	return cmd.Run()
 }
 
-func (proj* PROJINFO)createContainer()(string,*exec.Cmd,error){
+func (proj* PROJINFO)createContainer(args []string)(string,*exec.Cmd,error){
 	obsPath,fName,err:=proj.Uncompress()  // uncompress, stat(isdir),return obsolute path
 	if(err!=nil){
 		fmt.Println("Uncompress proj.tgz error",err)
@@ -104,18 +108,29 @@ func (proj* PROJINFO)createContainer()(string,*exec.Cmd,error){
 	}
 	defer os.RemoveAll(obsPath)
 	ctrun:=""
-	ctwork:=""
+	ctwork:="/tmp/"
+	strcmdfile:=fmt.Sprintf("/opt/testssvr/%d/run",proj.Id)
 	if proj.IsDir{
 		if finfo,err:=os.Stat(obsPath+"/run");err==nil{	// host path
 			if !finfo.IsDir() && (finfo.Mode() &0700 !=0){
 				ctrun="/tmp/"+fName+"/run"	// guest path
-				ctwork="/tmp/"+fName
+				ctwork+=fName
 			}
 		}else{
 			return "",nil,errors.New("File 'run' not found in your directory.")
 		}
 	}else{// get postfix, and try to build them, then copy runable binary to container
-		return  "", nil, errors.New("Single file will support later")
+		srccmd,err:=runsrc.GetCmd(obsPath,args...)
+		if err!=nil{
+			fmt.Println("Get src process cmd error")
+			return "",nil,err
+		}
+		cmdfile,_:=os.Create(strcmdfile)
+		cmdfile.Write([]byte(srccmd))
+		cmdfile.Close()
+		os.Chmod(strcmdfile,0777)
+		defer os.Remove(strcmdfile)
+		ctrun="/tmp/run"
 	}
 	if ctrun==""{
 		return "",nil,errors.New("Can not run because of incorrect perm or directory structure")
@@ -130,11 +145,21 @@ func (proj* PROJINFO)createContainer()(string,*exec.Cmd,error){
 	}
 	ctid:=strings.Replace(string(outbyte),"\n","",-1)
 	ctid=strings.Replace(ctid,"\r","",-1)
+	// copy source
 	crcmd=exec.Command("docker","cp",obsPath,ctid+":/tmp")
 	if err:=crcmd.Run();err!=nil{
-		fmt.Println("docker cp error:",err)
+		fmt.Println("docker cp src error:",err)
 		return "",nil,err
 	}
+	// create run command for src
+	if !proj.IsDir{
+		crcmd=exec.Command("docker","cp",strcmdfile,ctid+":/tmp")
+		if err:=crcmd.Run();err!=nil{
+			fmt.Println("docker cp cmdfile error:",err)
+			return "",nil,err
+		}
+	}
+
 	crcmd=exec.Command("docker","start", "-i",ctid)
 	return ctid,crcmd,nil
 }

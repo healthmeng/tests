@@ -70,16 +70,27 @@ func procConn(conn net.Conn){
 			conn.Write([]byte(line))
 		}
 	case "Run":
-		bufid:=make([]byte,10,10)
-		if nRd,err:=rd.Read(bufid);err!=nil{
+		//bufid:=make([]byte,10,10)
+		if bufid,_,err:=rd.ReadLine();err!=nil{
 			fmt.Println("Read id error",err)
 //			conn.Write([]byte("ERROR "+err.Error())) // need not,since read error already
 			return
 		}else{
 			var nID int64
-			_,err:=fmt.Sscanf(string(bufid[:nRd]),"%d",&nID)
+			var nParam int
+			_,err:=fmt.Sscanf(string(bufid),"%d%d",&nID,&nParam)
+			params:=make([]string,0,20)
+			for i:=0;i<nParam;i++{
+				param,_,err:=rd.ReadLine()
+				if err!=nil{
+					fmt.Println("Get parameters failed.")
+					conn.Write([]byte("Parameters error"))
+					return
+				}
+				params=append(params,string(param))
+			}
 			rio:=&RemoteIO{rdr:rd,wtr:conn}
-			chout,err:=backend.RunID(nID,rio) // cmd.Start
+			chout,err:=backend.RunID(nID,rio,params) // cmd.Start
 			// concurrent input and output
 			if err!=nil{
 				fmt.Println("Run command error:",err)
