@@ -189,14 +189,32 @@ func ParseInput(conn net.Conn){
 	}
 }
 
-func doRun(id int64){
+func doRun(id int64, args []string){
     conn,err:=net.Dial("tcp",rsvr+rport)
     if err!=nil{
         fmt.Println("connect to server error")
         return
     }
     defer conn.Close()
-	conn.Write([]byte(fmt.Sprintf("Run\n%d",id)))
+/*
+	Run\n
+	id nArgs\n
+	arg1\n
+	arg2\n
+	...
+	argn\n
+*/
+	conn.Write([]byte("Run\n"))
+	if args==nil{
+		conn.Write([]byte(fmt.Sprintf("%d 0\n",id)))
+	}else{
+		nArg:=len(args)
+		conn.Write([]byte(fmt.Sprintf("%d %d\n",id,nArg)))
+		for i:=0;i<nArg;i++{
+			conn.Write([]byte(args[i]+"\n"))
+		}
+	}
+	//conn.Write([]byte(fmt.Sprintf("Run\n%d",id)))
 	rd:=bufio.NewReader(conn)
 	// concurrent process intput and output
 	go ParseInput(conn)
