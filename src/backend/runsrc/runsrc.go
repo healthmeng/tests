@@ -1,3 +1,5 @@
+// provide a plugin framework for different source code execution
+
 package runsrc
 
 import (

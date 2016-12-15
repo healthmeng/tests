@@ -1,3 +1,4 @@
+// process remote run process in container and io redirection related operations
 package backend
 
 import (
@@ -28,7 +29,7 @@ func waitOut(chok chan int,cmd *exec.Cmd){
 func RunID(id int64,rio Redirect,params []string)(chan int ,error){
 	chout:=make(chan int,1)
 	chok:=make(chan int,1)
-	proj,err:=lookforID(id)
+	proj,err:=LookforID(id)
 	if err!=nil{
 		fmt.Println("Can't find project-- id:",id)
 		return chout,err
