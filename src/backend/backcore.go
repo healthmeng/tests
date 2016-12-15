@@ -1,9 +1,12 @@
-package backend 
+/* process object and database related operations. */
+
+package backend
 
 import (
 _"github.com/Go-SQL-Driver/MySQL"
 "database/sql"
 "time"
+"os"
 "fmt"
 "errors"
 )
@@ -20,7 +23,7 @@ type PROJINFO struct{
 	Size int64
 }
 
-func lookforID(id int64)(*PROJINFO, error){
+func LookforID(id int64)(*PROJINFO, error){
     db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests")
     if err!=nil{
         fmt.Println("Open database failed")
@@ -42,6 +45,27 @@ func lookforID(id int64)(*PROJINFO, error){
 	return proj,nil
 }
 
+func DelProj(id int64) error{
+	db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests") //?charset=utf8")
+    if err!=nil{
+        fmt.Println("Open database failed")
+        return err
+    }
+    defer db.Close()
+	delcmd:=fmt.Sprintf("delete from proj where proj_id=%d",id)
+	if result,err:=db.Exec(delcmd);err!=nil{
+		fmt.Println("Exec delete cmd in db error:",err)
+		return err
+	}else{
+		if rows,_:=result.RowsAffected();rows>0{
+			projdir:=fmt.Sprintf("/opt/testssvr/%d",id)
+			os.RemoveAll(projdir)
+			return nil
+		}
+		return errors.New(fmt.Sprintf("Can't find project whose id=%d",id))
+	}
+}
+
 func ListProj()([]PROJINFO,error){
     db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests") //?charset=utf8")
     //db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
@@ -50,7 +74,7 @@ func ListProj()([]PROJINFO,error){
         return nil,err
     }
     defer db.Close()
-    query:="select count(*) as value from proj" 
+    query:="select count(*) as value from proj"
 	var rows int64
     if err:=db.QueryRow(query).Scan(&rows);err!=nil{
 		fmt.Println("Query rows error")
@@ -70,8 +94,31 @@ func ListProj()([]PROJINFO,error){
 	return projs,nil
 }
 
+func (info* PROJINFO)UpdateDB() error{
+	db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests") //?charset=utf8")
+    if err!=nil{
+        fmt.Println("Open database failed")
+        return err
+    }
+    defer db.Close()
+	tm:=time.Now().Local()
+	info.Atime=fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d",tm.Year(),tm.Month(),tm.Day(),tm.Hour(),tm.Minute(),tm.Second())
+	updatecmd:=fmt.Sprintf("update proj set title='%s',descr='%s',conclude='%s',projtime='%s' where proj_id=%d",info.Title,info.Descr,info.Conclude,info.Atime,info.Id)
+	if result,err:=db.Exec(updatecmd);err!=nil{
+		fmt.Println("Exec update cmd in db error:",err)
+		return err
+	}else{
+		if rows,_:=result.RowsAffected();rows>0{
+			return nil
+		}else{
+			return errors.New("Can't find project in database")
+		}
+	}
+}
+
 func (info* PROJINFO) CreateInDB() error{
-	db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests") 
+	db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests")
+
 	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")  // this will get messed code in Chinese
 	if err!=nil{
 		fmt.Println("Open database failed")

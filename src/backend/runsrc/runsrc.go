@@ -1,3 +1,5 @@
+// provide a plugin framework for different source code execution
+
 package runsrc
 
 import (
@@ -29,7 +31,7 @@ func GetCmd(srcname string, args ...string)string{
 	filename:=info.Name()
 	for _,obj:=range(handler){
 		if tp=obj.CanProc(srcname);tp!=0{
-			ret=fmt.Sprintf("echo \"Trying to run %s as %s code:\"\n",filename,obj.Detector)+obj.GetRunString(tp,srcname,args...)
+			ret=fmt.Sprintf("echo \"Trying to run %s as %s source code:\"\n",filename,obj.Detector)+obj.GetRunString(tp,srcname,args...)
 			break
 		}
 	}
