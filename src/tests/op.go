@@ -1,3 +1,5 @@
+// process net protocol, object operation
+
 package main
 
 import (
@@ -39,7 +41,15 @@ func (info* PROJINFO)dumpInfo(){
 }
 
 func (info* PROJINFO)remoteCreate()(int64 , error){
-
+/*
+Client side:
+ 	-> Create \n
+	-> json data \n
+<- OK\n
+ 	-> binary file data
+<- SUCCESS\n
+<- json data \n
+*/
 	conn,err:=net.Dial("tcp",rsvr+rport)
 	if err!=nil{
 		return -1,err
@@ -75,17 +85,18 @@ func (info* PROJINFO)remoteCreate()(int64 , error){
 	if obj,err:=json.Marshal(info);err!=nil{
 		return -1,errors.New("struct json marshal error")
 	}else{
-		ctext=("Create\n")+string(obj)
+		ctext=("Create\n")+string(obj)+"\n"
 	}
 
 	if _,err:=conn.Write([]byte(ctext));err!=nil{
 		return -1,errors.New("send \"Create\" message error")
 	}
-	buf:=make([]byte,1024,1024)
-	if _,err:=rb.Read(buf);err!=nil{
+//	buf:=make([]byte,1024,1024)
+	buf,_,err:=rb.ReadLine()
+	if err!=nil{
 		return -1,errors.New("receive data error")
 	}
-	if string(buf[:2]) !="OK"{
+	if string(buf) !="OK"{
 		return -1,errors.New("remote server refused:"+string(buf))
 	}
 
@@ -97,14 +108,14 @@ func (info* PROJINFO)remoteCreate()(int64 , error){
 
 	result,_,err:=rb.ReadLine()
 	if(err!=nil){
-		return -1,errors.New("receive created data error")
+		return -1,errors.New("Create--receive created data error")
 	}
 	if string(result)!="SUCCESS" {
 		return -1,errors.New("receive failed:"+string(result))
 	}
-	len,_:=rb.Read(buf)
-	if err:=json.Unmarshal(buf[:len],info); err!=nil{
-		return -1,errors.New("resolve remote data error")
+	buf,_,_=rb.ReadLine()
+	if err:=json.Unmarshal(buf,info); err!=nil{
+		return -1,errors.New("Create--resolve remote data error")
 	}
 	info.dumpInfo()
 	return info.Id,nil
@@ -159,6 +170,68 @@ func doDel(id int64){
 			fmt.Println(string(line))
 		}
 	}
+}
+
+func doEdit(id int64){
+
+/*
+client side:
+	-> Edit\n
+	-> proj_id \n
+<- OK\n
+<- json data\n
+	-> CANCEL\n  |  json_data\n
+<- RESULT
+*/
+	conn,err:=net.Dial("tcp",rsvr+rport)
+	if err!=nil{
+		return
+	}
+	defer conn.Close()
+
+	conn.Write([]byte(fmt.Sprintf("Edit\n%d\n",id)))
+	rd:=bufio.NewReader(conn)
+	line,_,err:=rd.ReadLine()
+	if err!=nil{
+		fmt.Println("Get Edit result error:",err)
+		return
+	}
+	if string(line)!="OK"{
+		fmt.Println("Find project error:",string(line))
+		return
+	}
+	line,_,err=rd.ReadLine()
+	if err!=nil{
+		fmt.Println("Get remote project info error:",err)
+		return
+	}
+	info:=new(PROJINFO)
+	if err:=json.Unmarshal(line,info); err!=nil{
+		fmt.Println("Edit--resolve remote data error")
+		return
+	}
+	info.scanInfo()
+	fmt.Printf("Project ID: %d\nTitle: %s\nDescription: %s\nConclusion: %s\nAre you sure?(yes)",info.Id,info.Title,info.Descr,info.Conclude)
+	c:="yes"
+	fmt.Scanf("%s",&c)
+	ctext:="CANCEL\n"
+	if c=="yes"{
+		if obj,err:=json.Marshal(info);err!=nil{
+			fmt.Println ("Edit client--Parse object error",err)
+		}else{
+			ctext=string(obj)+"\n"
+			conn.Write([]byte(ctext))
+			line,_,err=rd.ReadLine()
+			if err!=nil{
+				fmt.Println("Get edit result error:",err)
+			}else{
+				fmt.Println(string(line))
+			}
+			return
+		}
+	}
+	fmt.Println("Edit canceled.")
+	conn.Write([]byte(ctext))
 }
 
 func doList(){
