@@ -59,7 +59,16 @@ func updateSrc(){
 }
 
 func delProj(){
-    fmt.Println("del:")
+	if len(os.Args)!=3{
+		prtUsage()
+	}else{
+		var id int64
+		if _,err:=fmt.Sscanf(os.Args[2],"%d",&id);err!=nil{
+			fmt.Println("Bad parameter:",os.Args[2])
+		}else{
+			doDel(id)
+		}
+	}
 }
 
 func getProj(){
@@ -68,7 +77,7 @@ func getProj(){
 
 func runProj(){
 	nArg:=len(os.Args)
-	if(nArg<3){
+	if nArg<3{
         prtUsage()
 	}else{
 		var id int64
@@ -83,7 +92,6 @@ func runProj(){
 		}
 	}
 }
-
 
 func main(){
 	argc:=len(os.Args)

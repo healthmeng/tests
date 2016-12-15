@@ -142,6 +142,25 @@ func (info* PROJINFO)scanInfo(){
 	}
 }
 
+func doDel(id int64){
+    conn,err:=net.Dial("tcp",rsvr+rport)
+    if err!=nil{
+		fmt.Println("connect to server error")
+        return
+    }
+    defer conn.Close()
+	conn.Write([]byte(fmt.Sprintf("Del\n%d\n",id)))
+	rd:=bufio.NewReader(conn)
+	for{
+		line,_,err:=rd.ReadLine()
+		if err!=nil{
+			break
+		}else{
+			fmt.Println(string(line))
+		}
+	}
+}
+
 func doList(){
     conn,err:=net.Dial("tcp",rsvr+rport)
     if err!=nil{
