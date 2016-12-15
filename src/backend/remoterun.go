@@ -70,9 +70,9 @@ func procTimeout(cid string,chok , chout chan int){
 }
 
 
-func (proj* PROJINFO)Uncompress()(string,string,error){// abs path & final name
+func (proj* PROJINFO)prepareFile()(string,string,error){// abs path & final name
 	basePath:=fmt.Sprintf("/opt/testssvr/%d/",proj.Id)
-	srcPath:=basePath+"proj.tgz"
+/*	srcPath:=basePath+"proj.tgz"
 	if _,err:=os.Stat(srcPath);err!=nil{
 		return "","",errors.New("Can't find "+srcPath)
 	}
@@ -80,12 +80,12 @@ func (proj* PROJINFO)Uncompress()(string,string,error){// abs path & final name
 	if err:=cmd.Run();err!=nil{
 		fmt.Println("tar proj.tgz error:",err)
 		return "","",err
-	}
+	}*/
 	dstPath:=basePath+proj.Path
 	finfo,err:=os.Stat(dstPath)
 	if err!=nil{
-		fmt.Println(dstPath, "not found, check your tar parameters.")
-		return dstPath,finfo.Name(),err
+		fmt.Println(dstPath, "Running file(s) not found.")
+		return dstPath,"",err
 	}
 	proj.IsDir=finfo.IsDir()
 	return dstPath,finfo.Name(),nil
@@ -102,12 +102,12 @@ func removeContainer(cid string, exited bool) error{
 }
 
 func (proj* PROJINFO)createContainer(args []string)(string,*exec.Cmd,error){
-	obsPath,fName,err:=proj.Uncompress()  // uncompress, stat(isdir),return obsolute path
+	obsPath,fName,err:=proj.prepareFile()  // uncompress, stat(isdir),return obsolute path
 	if(err!=nil){
-		fmt.Println("Uncompress proj.tgz error",err)
+		fmt.Println("Prepare running file(s) error",err)
 		return "",nil,err
 	}
-	defer os.RemoveAll(obsPath)
+//	defer os.RemoveAll(obsPath)
 	ctrun:=""
 	ctwork:="/tmp/"
 	strcmdfile:=fmt.Sprintf("/opt/testssvr/%d/run",proj.Id)
