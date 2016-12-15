@@ -91,7 +91,6 @@ Client side:
 	if _,err:=conn.Write([]byte(ctext));err!=nil{
 		return -1,errors.New("send \"Create\" message error")
 	}
-//	buf:=make([]byte,1024,1024)
 	buf,_,err:=rb.ReadLine()
 	if err!=nil{
 		return -1,errors.New("receive data error")
@@ -104,7 +103,6 @@ Client side:
 	rd,_:=os.Open(tmpfile)
 	io.CopyN(conn,rd,info.Size)
 	rd.Close()
-//	os.Remove(tmpfile)
 
 	result,_,err:=rb.ReadLine()
 	if(err!=nil){
