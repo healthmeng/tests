@@ -6,7 +6,7 @@ import (
 	"net"
 	//"sync"
 	"os/exec"
-	//"time"
+	"time"
 	"backend"
 	"bufio"
 	"encoding/json"
@@ -46,25 +46,39 @@ func procConn(conn net.Conn) {
 			return
 		} else if err := json.Unmarshal(buf, proj); err != nil {
 			fmt.Println("Resolve create data error:", string(buf))
-			conn.Write([]byte("ERROR " + err.Error()))
-			return
-		}
-		if err := proj.CreateInDB(); err != nil {
-			fmt.Println("Create in database error:", err)
-			conn.Write([]byte("ERROR " + err.Error()))
+			conn.Write([]byte("ERROR: " + err.Error()))
 			return
 		}
 		conn.Write([]byte("OK\n"))
-		exec.Command("mkdir", "-p", fmt.Sprintf("/opt/testssvr/%d", proj.Id)).Run()
-		if crfile, err := os.Create(fmt.Sprintf("/opt/testssvr/%d/proj.tgz", proj.Id)); err == nil {
-			io.CopyN(crfile, conn, proj.Size)
+		tmpfile:=fmt.Sprintf("/tmp/proj-%d",time.Now().UnixNano())
+		if crfile, err := os.Create(tmpfile); err == nil {
+			defer os.Remove(tmpfile)
+			size,recverr:=io.CopyN(crfile, conn, proj.Size)
 			crfile.Close()
-			obj, _ := json.Marshal(proj)
-			ret := "SUCCESS\n" + string(obj) + "\n"
-			conn.Write([]byte(ret))
+			if recverr!=nil || size!=proj.Size{
+				fmt.Println("Receive file error")
+				conn.Write([]byte("Receive file error"))
+				return
+			}
+			if err := proj.CreateInDB(); err != nil {
+				fmt.Println("Create in database error:", err)
+				conn.Write([]byte("ERROR: " + err.Error()))
+				return
+			}
+			projdir:=fmt.Sprintf("/opt/testssvr/%d", proj.Id)
+			exec.Command("mkdir", "-p", projdir).Run()
+			if err:=exec.Command("tar","xzvf",tmpfile,"-C",projdir).Run();err!=nil{
+				fmt.Println("Bad tgz file, can't uncompress: ",err)
+				backend.DelProj(proj.Id)
+				conn.Write([]byte("ERROR: project tarball is not a valid .tgz file"))
+			}else{
+				obj, _ := json.Marshal(proj)
+				ret := "SUCCESS\n" + string(obj) + "\n"
+				conn.Write([]byte(ret))
+			}
 		} else {
 			fmt.Println("Create file error:", err)
-			conn.Write([]byte("ERROR " + err.Error()))
+			conn.Write([]byte("ERROR: " + err.Error()))
 		}
 
 	case "List":

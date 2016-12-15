@@ -72,15 +72,6 @@ func procTimeout(cid string,chok , chout chan int){
 
 func (proj* PROJINFO)prepareFile()(string,string,error){// abs path & final name
 	basePath:=fmt.Sprintf("/opt/testssvr/%d/",proj.Id)
-/*	srcPath:=basePath+"proj.tgz"
-	if _,err:=os.Stat(srcPath);err!=nil{
-		return "","",errors.New("Can't find "+srcPath)
-	}
-	cmd:=exec.Command("tar","xzvf",srcPath,"-C",basePath)
-	if err:=cmd.Run();err!=nil{
-		fmt.Println("tar proj.tgz error:",err)
-		return "","",err
-	}*/
 	dstPath:=basePath+proj.Path
 	finfo,err:=os.Stat(dstPath)
 	if err!=nil{
