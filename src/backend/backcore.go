@@ -42,6 +42,26 @@ func lookforID(id int64)(*PROJINFO, error){
 	return proj,nil
 }
 
+func DelProj(id int64) error{
+	db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests") //?charset=utf8")
+    //db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
+    if err!=nil{
+        fmt.Println("Open database failed")
+        return err
+    }
+    defer db.Close()
+	delcmd:=fmt.Sprintf("delete from proj where proj_id=%d",id)
+	if result,err:=db.Exec(delcmd);err!=nil{
+		fmt.Println("Exec delete cmd in db error:",err)
+		return err
+	}else{
+		if rows,_:=result.RowsAffected();rows>0{
+			return nil
+		}
+		return errors.New(fmt.Sprintf("Can't find project whose id=%d",id))
+	}
+}
+
 func ListProj()([]PROJINFO,error){
     db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests") //?charset=utf8")
     //db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
@@ -71,7 +91,8 @@ func ListProj()([]PROJINFO,error){
 }
 
 func (info* PROJINFO) CreateInDB() error{
-	db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests") 
+	db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests")
+
 	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")  // this will get messed code in Chinese
 	if err!=nil{
 		fmt.Println("Open database failed")
