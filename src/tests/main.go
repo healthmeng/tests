@@ -3,11 +3,11 @@
 package main
 
 import (
-"fmt"
-"os"
+	"fmt"
+	"os"
 )
 
-func prtUsage(){
+func prtUsage() {
 	fmt.Println("Tests is a tool to collect your test codes and makes it easy for later review.")
 	fmt.Println("Usage:")
 	fmt.Println("\ttests command [args]")
@@ -15,101 +15,109 @@ func prtUsage(){
 	fmt.Println("\tcreate, -c dir|file: Create(upload) a test project.")
 	fmt.Println("\tdel, -d proj_id: Delete a project.")
 	fmt.Println("\tedit, -e proj_id: Edit an existing remote project's info.")
-	fmt.Println("\tget, -g proj_id: Download project(by proj_id) to current directory, all data compressed in proj.tgz")
-	fmt.Println("\tlist, -l: List all test projects and their infomations(IDs may be most useful).")
+	fmt.Println("\tget, -g proj_id: Download project(by proj_id) to current directory, all data compressed in proj.tgz.")
+	fmt.Println("\tlist, -l | -l [id]: List all test projects and their infomations(IDs may be most useful) OR list project directory of certain id.")
 	fmt.Println("\trun, -r proj_id [arg1 arg2 arg3...]: Run a proj, get commandline result. The args are only valid when project is a single source file.")
 	fmt.Println("\tsearch, -s keyword1[, keyword2,keyword3...]: Search a project by keywords.")
 	fmt.Println("\tupdate, -u proj_id [dir|file]: Update codes of an existing project.If path is not refered, try to use current dir.")
 }
 
-func tryCreate(){
+func tryCreate() {
 	fmt.Println("create:")
-	count:=len(os.Args)
-	if(count>3){
+	count := len(os.Args)
+	if count > 3 {
 		prtUsage()
-	}else{
-		path:=os.Args[2]
-		if finfo,err:=os.Stat(path);err!=nil{
-			fmt.Println("Path error:",err.Error())
-		}else{
-			if id,err:=doCreate(path,finfo.IsDir());err!=nil{
-				fmt.Println("Create failed:",err)
-			}else{
-				fmt.Println("Create success,project id: ",id)
+	} else {
+		path := os.Args[2]
+		if finfo, err := os.Stat(path); err != nil {
+			fmt.Println("Path error:", err.Error())
+		} else {
+			if id, err := doCreate(path, finfo.IsDir()); err != nil {
+				fmt.Println("Create failed:", err)
+			} else {
+				fmt.Println("Create success,project id: ", id)
 			}
 		}
 	}
 }
 
-func searchProj(){
+func searchProj() {
 }
 
-func listProj(){
-	if len(os.Args)>2{
+func listProj() {
+	nArgs:= len(os.Args)
+	if nArgs > 3 {
 		prtUsage()
-	}else{
+	} else if nArgs == 3 {
+		var id int64
+		if _, err := fmt.Sscanf(os.Args[2], "%d", &id); err != nil {
+			fmt.Println("Bad parameter:", os.Args[2])
+		}else{
+			doBrowse(id)
+		}
+	} else {
 		doList()
 	}
 }
 
-func tryEdit(){
-	if len(os.Args)!=3{
+func tryEdit() {
+	if len(os.Args) != 3 {
 		prtUsage()
-	}else{
+	} else {
 		var id int64
-		if _,err:=fmt.Sscanf(os.Args[2],"%d",&id);err!=nil{
-			fmt.Println("Bad parameter:",os.Args[2])
-		}else{
+		if _, err := fmt.Sscanf(os.Args[2], "%d", &id); err != nil {
+			fmt.Println("Bad parameter:", os.Args[2])
+		} else {
 			doEdit(id)
 		}
 	}
 }
 
-func updateSrc(){
+func updateSrc() {
 	fmt.Println("update:")
 }
 
-func delProj(){
-	if len(os.Args)!=3{
+func delProj() {
+	if len(os.Args) != 3 {
 		prtUsage()
-	}else{
+	} else {
 		var id int64
-		if _,err:=fmt.Sscanf(os.Args[2],"%d",&id);err!=nil{
-			fmt.Println("Bad parameter:",os.Args[2])
-		}else{
+		if _, err := fmt.Sscanf(os.Args[2], "%d", &id); err != nil {
+			fmt.Println("Bad parameter:", os.Args[2])
+		} else {
 			doDel(id)
 		}
 	}
 }
 
-func getProj(){
-    fmt.Println("get:")
+func getProj() {
+	fmt.Println("get:")
 }
 
-func runProj(){
-	nArg:=len(os.Args)
-	if nArg<3{
-        prtUsage()
-	}else{
+func runProj() {
+	nArg := len(os.Args)
+	if nArg < 3 {
+		prtUsage()
+	} else {
 		var id int64
-		if _,err:=fmt.Sscanf(os.Args[2],"%d",&id);err!=nil{
+		if _, err := fmt.Sscanf(os.Args[2], "%d", &id); err != nil {
 			fmt.Println("Bad parameter:", os.Args[2])
 			return
 		}
-		if nArg>3{
-			doRun(id,os.Args[3:])
-		}else{
-			doRun(id,nil)
+		if nArg > 3 {
+			doRun(id, os.Args[3:])
+		} else {
+			doRun(id, nil)
 		}
 	}
 }
 
-func main(){
-	argc:=len(os.Args)
-	if argc<2 {
+func main() {
+	argc := len(os.Args)
+	if argc < 2 {
 		prtUsage()
-	}else{
-		switch os.Args[1]{
+	} else {
+		switch os.Args[1] {
 		case "create":
 			fallthrough
 		case "-c":
