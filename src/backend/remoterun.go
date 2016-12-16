@@ -71,7 +71,7 @@ func procTimeout(cid string,chok , chout chan int){
 
 
 func (proj* PROJINFO)prepareFile()(string,string,error){// abs path & final name
-	basePath:=fmt.Sprintf("/opt/testssvr/%d/",proj.Id)
+	basePath:=getProjDir(proj.Id)+"/"
 	dstPath:=basePath+proj.Path
 	finfo,err:=os.Stat(dstPath)
 	if err!=nil{
@@ -101,7 +101,7 @@ func (proj* PROJINFO)createContainer(args []string)(string,*exec.Cmd,error){
 //	defer os.RemoveAll(obsPath)
 	ctrun:=""
 	ctwork:="/tmp/"
-	strcmdfile:=fmt.Sprintf("/opt/testssvr/%d/run",proj.Id)
+	strcmdfile:=getProjDir(proj.Id)+"/run"
 	if proj.IsDir{
 		if finfo,err:=os.Stat(obsPath+"/run");err==nil{	// host path
 			if !finfo.IsDir() && (finfo.Mode() &0700 !=0){

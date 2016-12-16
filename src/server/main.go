@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 	//"sync"
-	"os/exec"
+	//"os/exec"
 	"time"
 	"backend"
 	"bufio"
@@ -65,9 +65,10 @@ func procConn(conn net.Conn) {
 				conn.Write([]byte("ERROR: " + err.Error()))
 				return
 			}
-			projdir:=fmt.Sprintf("/opt/testssvr/%d", proj.Id)
+		/*	projdir:=getProjDir(proj.Id)
 			exec.Command("mkdir", "-p", projdir).Run()
-			if err:=exec.Command("tar","xzvf",tmpfile,"-C",projdir).Run();err!=nil{
+			if err:=exec.Command("tar","xzvf",tmpfile,"-C",projdir).Run();err!=nil{*/
+			if err=proj.InitDir(tmpfile);err!=nil{
 				fmt.Println("Bad tgz file, can't uncompress: ",err)
 				backend.DelProj(proj.Id)
 				conn.Write([]byte("ERROR: project tarball is not a valid .tgz file"))
@@ -97,7 +98,7 @@ func procConn(conn net.Conn) {
 
 	case "Del":
 		if bufid, _, err := rd.ReadLine(); err != nil {
-			fmt.Println("Del proj:read id error", err)
+			fmt.Println("Del proj:read id error--", err)
 		} else {
 			var nID int64
 			fmt.Sscanf(string(bufid), "%d", &nID)
@@ -108,6 +109,21 @@ func procConn(conn net.Conn) {
 			}
 		}
 
+	case "Browse":
+		if bufid,_,err:=rd.ReadLine();err!=nil{
+			fmt.Println("Browse proj: read id error--",err)
+		} else{
+			var nID int64
+			fmt.Sscanf(string(bufid),"%d",&nID)
+			if files,err:=backend.BrowseProj(nID);err!=nil{
+				fmt.Println("Browse proj failed:",err)
+				conn.Write([]byte("Browse proj error:"+err.Error()))
+			}else{
+				for _,line:=range(files){
+					conn.Write([]byte(line+"\n"))
+				}
+			}
+		}
 		/*
 		   Edit procedure:
 		   server side:

@@ -7,6 +7,8 @@ _"github.com/Go-SQL-Driver/MySQL"
 "database/sql"
 "time"
 "os"
+"os/exec"
+"strings"
 "fmt"
 "errors"
 )
@@ -21,6 +23,62 @@ type PROJINFO struct{
 	Path string
 	IsDir bool
 	Size int64
+}
+
+func getProjDir(id int64) string{
+	return fmt.Sprintf("/opt/testssvr/%d",id)
+}
+
+func BrowseProj(id int64)([]string,error){
+	proj,err:=LookforID(id)
+	if err!=nil{
+		fmt.Println("Lookfor proj failed:",err)
+		return nil,err
+	}
+	basedir:=getProjDir(id)
+	rootdir:=basedir+"/"+proj.Path
+    path := rootdir
+    for {
+        sp := strings.Replace(path, "//", "/", -1)
+        if sp != path {
+            path = sp
+        } else {
+            break
+        }
+    }
+	rootdir=strings.TrimSuffix(path,"/")
+
+	if info,err:=os.Stat(rootdir);err!=nil{
+		fmt.Println(rootdir," not exist")
+		return nil,err
+	}else{
+		dirname:=info.Name()
+		output,err:=exec.Command("find",rootdir).Output()
+		if err!=nil{
+			fmt.Println("browse root dir error:",err)
+			return nil,err
+		}
+		lines:=strings.Split(string(output),"\n")
+		result:=make([]string,0,50)
+		for _,path:=range(lines){
+			if path==""{
+				continue
+			}
+			pinfo,err:=os.Stat(path)
+			if err!=nil{
+				continue
+			}
+			isdir:=pinfo.IsDir()
+			reldir:=strings.TrimPrefix(path,rootdir)
+			final:=dirname+reldir
+			if isdir{
+				result=append(result,"[dir]"+final)
+			}else{
+				result=append(result,final)
+			}
+		}
+		return result,nil
+	}
 }
 
 func LookforID(id int64)(*PROJINFO, error){
@@ -58,7 +116,7 @@ func DelProj(id int64) error{
 		return err
 	}else{
 		if rows,_:=result.RowsAffected();rows>0{
-			projdir:=fmt.Sprintf("/opt/testssvr/%d",id)
+			projdir:=getProjDir(id)
 			os.RemoveAll(projdir)
 			return nil
 		}
@@ -92,6 +150,12 @@ func ListProj()([]PROJINFO,error){
 		}
 	}
 	return projs,nil
+}
+
+func (info* PROJINFO)InitDir(tmpfile string) error{
+	projdir:=getProjDir(info.Id)
+	exec.Command("mkdir", "-p", projdir).Run()
+	return exec.Command("tar","xzvf",tmpfile,"-C",projdir).Run()
 }
 
 func (info* PROJINFO)UpdateDB() error{
