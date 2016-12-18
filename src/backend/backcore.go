@@ -43,16 +43,16 @@ func (info *PROJINFO) getRootDir() string {
 	rootdir = strings.TrimSuffix(path, "/")
 	return rootdir
 }
-
-func (info *PROJINFO*) GetDestFile(relapath string) (string,error){
 /*
+func (info *PROJINFO*) GetDestFile(relapath string) (string,error){
+
 	if rootdir is file: rootprefix=rootdir-"filename"
 	if rootdir is dir: rootprefix=rootdir-finfo.Name()
 	destfile=rootprefix+relapath
-*/
+
 	return "",nil
 }
-
+*/
 func (info *PROJINFO) diskFiles() (string, []string, error) {
 	rootdir := info.getRootDir()
 

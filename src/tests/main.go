@@ -15,7 +15,7 @@ func prtUsage() {
 	fmt.Println("\tcreate, -c dir|file: Create(upload) a test project.")
 	fmt.Println("\tdel, -d proj_id: Delete a project.")
 	fmt.Println("\tedit, -e proj_id: Edit an existing remote project's info.")
-	fmt.Println("\tget, -g proj_id: Download project(by proj_id) to current directory, all data compressed in proj.tgz.")
+	fmt.Println("\tget, -g proj_id srcfile: Download a source file from project, currently support single regular file only.")
 	fmt.Println("\tlist, -l | -l [id]: List all test projects and their infomations(IDs may be most useful) OR list project directory of certain id.")
 	fmt.Println("\trun, -r proj_id [arg1 arg2 arg3...]: Run a proj, get commandline result. The args are only valid when project is a single source file.")
 	fmt.Println("\tsearch, -s keyword1[, keyword2,keyword3...]: Search a project by keywords.")
@@ -91,7 +91,16 @@ func delProj() {
 }
 
 func getProj() {
-	fmt.Println("get:")
+	if len(os.Args)!=4 {
+		prtUsage()
+	}else{
+		var id int64
+		if _,err:=fmt.Sscanf(os.Args[2],"%d",&id);err!=nil{
+			fmt.Println("Bad parameter:",os.Args[2])
+			return
+		}
+		doGetFile(id,os.Args[3])
+	}
 }
 
 func runProj() {

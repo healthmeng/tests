@@ -251,6 +251,38 @@ func doBrowse(id int64){
 	}
 }
 
+func doGetFile(id int64, path string){
+	conn,err:=net.Dial("tcp",rsvr+rport)
+	if err!=nil{
+		fmt.Println("connect to server error")
+		return
+	}
+	defer conn.Close()
+	conn.Write([]byte(fmt.Sprintf("Get\n%d\n%s\n",id,path)))
+	rd:=bufio.NewReader(conn)
+	line,_,err:=rd.ReadLine()
+	if err!=nil{
+		fmt.Println("Get result from server error: ",err)
+		return
+	}
+	if string(line)=="OK"{
+		for {
+			fline,longline,err:=rd.ReadLine()
+			if err!=nil{
+				break
+			}else{
+				if longline{
+					fmt.Print(string(fline))
+				}else{
+					fmt.Println(string(fline))
+				}
+			}
+		}
+	} else{
+		fmt.Println(string(line))
+	}
+}
+
 func doList() {
 	conn, err := net.Dial("tcp", rsvr+rport)
 	if err != nil {
