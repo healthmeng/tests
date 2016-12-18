@@ -44,13 +44,30 @@ func (info *PROJINFO) getRootDir() string {
 	return rootdir
 }
 
-func (info *PROJINFO*) GetDestFile(relapath string) (string,error){
-/*
-	if rootdir is file: rootprefix=rootdir-"filename"
-	if rootdir is dir: rootprefix=rootdir-finfo.Name()
-	destfile=rootprefix+relapath
-*/
-	return "",nil
+func GetProjFile(id int64, file string)(string,int64,error){
+	proj,err:=LookforID(id)
+	if err!=nil{
+		return "",0,err
+	}
+	return proj.GetDestFile(file)
+}
+
+func (info *PROJINFO) GetDestFile(relapath string) (string,int64,error){
+//	destfile=rootprefix+relapath
+	rootdir:=info.getRootDir()
+	if finfo,err:=os.Stat(rootdir); err!=nil{
+		return "",0,err
+	} else {
+			destFile:=strings.TrimSuffix(rootdir,finfo.Name())+relapath
+			dinfo,err:=os.Stat(destFile)
+			if err!=nil{
+				return "",0,err
+			}else if dinfo.IsDir(){
+				return "",0,errors.New("Dir transfer is not supported")
+			}else {
+				return destFile,dinfo.Size(),nil
+			}
+	}
 }
 
 func (info *PROJINFO) diskFiles() (string, []string, error) {

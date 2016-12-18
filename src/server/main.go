@@ -7,6 +7,7 @@ import (
 	//"sync"
 	//"os/exec"
 	"time"
+	"strings"
 	"backend"
 	"bufio"
 	"encoding/json"
@@ -28,6 +29,7 @@ func procConn(conn net.Conn) {
 		return
 	}
 	switch string(command) {
+	case "Create":
 	/*
 	   Create procedure:
 	   Server side:
@@ -38,7 +40,7 @@ func procConn(conn net.Conn) {
 	   	-> SUCCESS\n
 	   	-> JsonData \n
 	*/
-	case "Create":
+
 		proj := new(backend.PROJINFO)
 		//		buf:=make([]byte,4096,4096)
 		if buf, _, err := rd.ReadLine(); err != nil {
@@ -109,6 +111,39 @@ func procConn(conn net.Conn) {
 			}
 		}
 
+	case "Get":
+/*
+server side:
+<- Get\n
+<- ID\n
+<- Filename\n
+	->OK\n | ERROR
+	->rawfile
+
+*/
+		bufid,_,err:=rd.ReadLine()
+		if err!=nil{
+			fmt.Println("Get file: read id error --",err)
+			return
+		}
+		var nID int64
+		fmt.Sscanf(string(bufid),"%d",&nID)
+		if buffile,_,err:=rd.ReadLine();err!=nil{
+			fmt.Println("Get file: read filename error --",err)
+		}else{
+			strs := strings.Split(string(buffile), "../")
+			path:= strs[len(strs)-1]	// for filesystem security
+			dstfile,size,err:=backend.GetProjFile(nID,path)
+			if err!=nil{
+				conn.Write([]byte("ERROR :"+err.Error()))
+			}else{
+				conn.Write([]byte("OK\n"))
+				srcfile,_:=os.Open(dstfile)
+				io.CopyN(conn,srcfile,size)
+				srcfile.Close()
+			}
+		}
+
 	case "Browse":
 		if bufid,_,err:=rd.ReadLine();err!=nil{
 			fmt.Println("Browse proj: read id error--",err)
@@ -124,6 +159,8 @@ func procConn(conn net.Conn) {
 				}
 			}
 		}
+
+	case "Edit":
 		/*
 		   Edit procedure:
 		   server side:
@@ -135,7 +172,7 @@ func procConn(conn net.Conn) {
 		   	-> RESULT(if get jsondata)
 		*/
 
-	case "Edit":
+
 		if bufid, _, err := rd.ReadLine(); err != nil {
 			fmt.Println("Edit proj:read id error", err)
 		} else {
