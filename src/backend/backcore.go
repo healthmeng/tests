@@ -101,9 +101,9 @@ func makeOutput(rootdir string, dfiles []string) ([]string, error) {
 			relatedir := strings.TrimPrefix(path, rootdir)
 			final := dirname + relatedir
 			if isdir {
-				result = append(result, "[dir]"+final)
+				result = append(result, "[dir] "+final)
 			} else {
-				result = append(result, final)
+				result = append(result, fmt.Sprintf("\t[%d] %s",pinfo.Size(),final))
 			}
 		}
 		return result, nil

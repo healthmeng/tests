@@ -55,7 +55,7 @@ func procConn(conn net.Conn) {
 		tmpfile:=fmt.Sprintf("/tmp/proj-%d",time.Now().UnixNano())
 		if crfile, err := os.Create(tmpfile); err == nil {
 			defer os.Remove(tmpfile)
-			size,recverr:=io.CopyN(crfile, conn, proj.Size)
+			size,recverr:=io.CopyN(crfile, rd, proj.Size)
 			crfile.Close()
 			if recverr!=nil || size!=proj.Size{
 				fmt.Println("Receive file error")
@@ -117,8 +117,7 @@ server side:
 <- Get\n
 <- ID\n
 <- Filename\n
-	->OK\n | ERROR
-	->rawfile
+	->rawfile | ERROR
 
 */
 		bufid,_,err:=rd.ReadLine()
@@ -137,7 +136,7 @@ server side:
 			if err!=nil{
 				conn.Write([]byte("ERROR :"+err.Error()))
 			}else{
-				conn.Write([]byte("OK\n"))
+	//			conn.Write([]byte("OK\n"))
 				srcfile,_:=os.Open(dstfile)
 				io.CopyN(conn,srcfile,size)
 				srcfile.Close()
@@ -159,6 +158,64 @@ server side:
 				}
 			}
 		}
+
+	case "Update":
+/*
+server side:
+<- Update\n
+<- ID \n
+<- projfile \n
+	-> nOrgFileSize\n | ERROR No such file\n
+<- nFileSize \n | CANCEL \n
+<- RawFile
+	-> OK | ERROR
+*/
+		bufid,_,errb:=rd.ReadLine()
+		pfile,_,errp:=rd.ReadLine()
+		if errb!=nil || errp!=nil {
+			fmt.Println("Update proj: read update info error.")
+			return
+		}
+		var nID int64
+		fmt.Sscanf(string(bufid),"%d",&nID)
+		if svrfile,size,err:=backend.GetProjFile(nID, string(pfile));err!=nil{
+			conn.Write([]byte("ERROR cant access file--"+err.Error()))
+		}else{
+			conn.Write([]byte(fmt.Sprintf("%d\n",size)))
+			line,_,err:=rd.ReadLine()
+			if err!=nil{
+				fmt.Println("Read file size error")
+				return
+			}
+			sizebuf:=string(line)
+			if sizebuf=="CANCEL"{
+				return
+			}
+			var realsize int64
+			if _,err:=fmt.Sscanf(sizebuf,"%d",&realsize);err!=nil{
+				fmt.Println("Bad response, get file size error!")
+			}else{
+				tmpname:=fmt.Sprintf("/tmp/srcfile-%d",time.Now().UnixNano())
+				tmpfile,_:=os.Create(tmpname)
+				cpsize,err:=io.CopyN(tmpfile,rd,realsize)
+				tmpfile.Close()
+				defer os.Remove(tmpname) // may fail after rename, but doesn't matter if err!=nil || cpsize!=realsize {
+				if err!=nil || cpsize!=realsize {
+					fmt.Println("Update -- Copy file error:",err)
+					conn.Write([]byte("ERROR copy file error"))
+				}else{
+					orginfo,_:=os.Stat(svrfile)
+					if err:=os.Rename(tmpname,svrfile);err!=nil{
+						fmt.Println("Write project source file error:",err)
+						conn.Write([]byte("ERROR write source file error"))
+					}else{
+						os.Chmod(svrfile,orginfo.Mode())
+						conn.Write([]byte("OK\n"))
+					}
+				}
+			}
+		}
+
 
 	case "Edit":
 		/*
