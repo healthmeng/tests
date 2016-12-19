@@ -19,7 +19,7 @@ func prtUsage() {
 	fmt.Println("\tlist, -l | -l [id]: List all test projects and their infomations(IDs may be most useful) OR list project directory of certain id.")
 	fmt.Println("\trun, -r proj_id [arg1 arg2 arg3...]: Run a proj, get commandline result. The args are only valid when project is a single source file.")
 	fmt.Println("\tsearch, -s keyword1[, keyword2,keyword3...]: Search a project by keywords.")
-	fmt.Println("\tupdate, -u proj_id [dir|file]: Update codes of an existing project.If path is not refered, try to use current dir.")
+	fmt.Println("\tupdate, -u proj_id proj_file(including path) localfile: Update a source file of an existed project.")
 }
 
 func tryCreate() {
@@ -74,7 +74,17 @@ func tryEdit() {
 }
 
 func updateSrc() {
-	fmt.Println("update:")
+//	fmt.Println("update:")
+	if len(os.Args) !=5{
+		prtUsage()
+	}else{
+		var id int64
+		if _,err:=fmt.Sscanf(os.Args[2],"%d",&id); err!=nil{
+			fmt.Println("Bad parameter:",os.Args[2])
+		}else{
+			doUpdate(id,os.Args[3],os.Args[4])
+		}
+	}
 }
 
 func delProj() {

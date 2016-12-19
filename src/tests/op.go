@@ -101,8 +101,11 @@ func (info *PROJINFO) remoteCreate() (int64, error) {
 
 	// copy file
 	rd, _ := os.Open(tmpfile)
-	io.CopyN(conn, rd, info.Size)
-	rd.Close()
+	defer rd.Close()
+	if _,err:=io.CopyN(conn, rd, info.Size);err!=nil{
+		fmt.Println("Copy file to server error:",err)
+		return -1,errors.New("Create--Copy file error")
+	}
 
 	result, _, err := rb.ReadLine()
 	if err != nil {
@@ -171,7 +174,6 @@ func doDel(id int64) {
 }
 
 func doEdit(id int64) {
-
 	/*
 	   client side:
 	   	-> Edit\n
@@ -251,6 +253,70 @@ func doBrowse(id int64){
 	}
 }
 
+func doUpdate(id int64, projfile string, localfile string){
+/*
+client side:
+	-> Update\n
+	-> ID \n
+	-> projfile \n
+<- nOrgFileSize\n | ERROR No such file\n
+	-> nFileSize \n | CANCEL \n
+	->RawFile
+<- OK | ERROR
+*/
+
+	fLocal,err:=os.Stat(localfile)
+	if err!=nil{
+		fmt.Println("Can't find file: ",localfile)
+		return
+	}else if fLocal.IsDir(){
+		fmt.Println("Support update a file only.")
+		return
+	}
+	conn,err:=net.Dial("tcp",rsvr+rport)
+	if err!=nil{
+		fmt.Println("connect to server error")
+		return
+	}
+	defer conn.Close()
+	conn.Write([]byte(fmt.Sprintf("Update\n%d\n%s\n",id,projfile)))
+	rd:=bufio.NewReader(conn)
+	line,_,err:=rd.ReadLine()
+	reply:=string(line)
+	if strings.Contains(reply,"ERROR"){
+		fmt.Println("Update error:\n",reply)
+		return
+	}
+	var rsize int64 =0
+	lsize:=fLocal.Size()
+	if _,err:=fmt.Sscanf(reply,"%d",&rsize);err!=nil{
+		fmt.Println("Resolve remote file size error.")
+		return
+	}
+	fmt.Printf("Replace remote file: %s(%d bytes) by local file %s(%dbytes)? (yes)",projfile,rsize,localfile,lsize)
+	cf:="yes"
+	fmt.Scanf("%s",&cf)
+	if cf != "yes"{
+		fmt.Println("Update cancelled!")
+		conn.Write([]byte("CANCEL\n"))
+	}else{
+		conn.Write([]byte(fmt.Sprintf("%d\n",lsize)))
+		sfile,_:=os.Open(localfile)
+		defer sfile.Close()
+		if _,err:=io.CopyN(conn,sfile,lsize);err!=nil{
+			fmt.Println("Upload file failed")
+			return
+		}
+		if line,_,err:=rd.ReadLine();err!=nil {
+			fmt.Println("Get update result error: ",err)
+		} else if  string(line)!="OK"{
+			fmt.Println("Update file error: ", string(line))
+		} else{
+			fmt.Println("Update file ok!")
+		}
+	}
+}
+
 func doGetFile(id int64, path string){
 	conn,err:=net.Dial("tcp",rsvr+rport)
 	if err!=nil{
@@ -260,12 +326,12 @@ func doGetFile(id int64, path string){
 	defer conn.Close()
 	conn.Write([]byte(fmt.Sprintf("Get\n%d\n%s\n",id,path)))
 	rd:=bufio.NewReader(conn)
-	line,_,err:=rd.ReadLine()
+/*	line,_,err:=rd.ReadLine()
 	if err!=nil{
 		fmt.Println("Get result from server error: ",err)
 		return
 	}
-	if string(line)=="OK"{
+	if string(line)=="OK"{*/
 		for {
 			fline,longline,err:=rd.ReadLine()
 			if err!=nil{
@@ -278,9 +344,9 @@ func doGetFile(id int64, path string){
 				}
 			}
 		}
-	} else{
+/*	} else{
 		fmt.Println(string(line))
-	}
+	}*/
 }
 
 func doList() {
