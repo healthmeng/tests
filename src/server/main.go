@@ -262,12 +262,41 @@ server side:
 			}
 		}
 
+	case "Search":
+		if bufargs,_,err:=rd.ReadLine();err!=nil{
+			fmt.Println("Search: read arg numbers error:",err)
+		}else{
+			nArgs :=0
+			fmt.Sscanf(string(bufargs),"%d",&nArgs)
+			keywords:=make([]string, 0, 20)
+			for i:=0;i<nArgs;i++{
+				if line,_,err:=rd.ReadLine();err!=nil{
+					fmt.Println("Read args error:",err)
+					return
+				}else{
+					keywords=append(keywords,string(line))
+				}
+			}
+
+			projs, err := backend.SearchProj(keywords)
+			if err != nil {
+				conn.Write([]byte("ERROR " + err.Error()))
+				return
+			}
+			objs := len(projs)
+			conn.Write([]byte(fmt.Sprintf("%d\n", objs)))
+			for i := 0; i < objs; i++ {
+				objbuf, _ := json.Marshal(projs[i])
+				line := string(objbuf) + "\n"
+				conn.Write([]byte(line))
+			}
+		}
+
 	case "Run":
 		//bufid:=make([]byte,10,10)
 		if bufid, _, err := rd.ReadLine(); err != nil {
 			fmt.Println("Run proj:read id error", err)
 			//			conn.Write([]byte("ERROR "+err.Error())) // need not,since read error already
-			return
 		} else {
 			var nID int64
 			var nParam int

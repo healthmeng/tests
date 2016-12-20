@@ -9,6 +9,7 @@ import (
 	_ "github.com/Go-SQL-Driver/MySQL"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -126,51 +127,6 @@ func BrowseProj(id int64) ([]string, error) {
 			return output, nil
 		}
 	}
-	/*
-	   	basedir:=getProjDir(id)
-	   	rootdir:=basedir+"/"+proj.Path
-	       path := rootdir
-	       for {
-	           sp := strings.Replace(path, "//", "/", -1)
-	           if sp != path {
-	               path = sp
-	           } else {
-	               break
-	           }
-	       }
-	   	rootdir=strings.TrimSuffix(path,"/")
-
-	   	if info,err:=os.Stat(rootdir);err!=nil{
-	   		fmt.Println(rootdir," not exist")
-	   		return nil,err
-	   	}else{
-	   		dirname:=info.Name()
-	   		output,err:=exec.Command("find",rootdir).Output()
-	   		if err!=nil{
-	   			fmt.Println("browse root dir error:",err)
-	   			return nil,err
-	   		}
-	   		lines:=strings.Split(string(output),"\n")
-	   		result:=make([]string,0,50)
-	   		for _,path:=range(lines){
-	   			if path==""{
-	   				continue
-	   			}
-	   			pinfo,err:=os.Stat(path)
-	   			if err!=nil{
-	   				continue
-	   			}
-	   			isdir:=pinfo.IsDir()
-	   			reldir:=strings.TrimPrefix(path,rootdir)
-	   			final:=dirname+reldir
-	   			if isdir{
-	   				result=append(result,"[dir]"+final)
-	   			}else{
-	   				result=append(result,final)
-	   			}
-	   		}
-	   		return result,nil
-	   	}*/
 }
 
 func LookforID(id int64) (*PROJINFO, error) {
@@ -185,7 +141,8 @@ func LookforID(id int64) (*PROJINFO, error) {
 	res, _ := db.Query(query)
 	defer res.Close()
 	if res.Next() {
-		if err := res.Scan(&proj.Id, &proj.Title, &proj.Descr, &proj.Atime, &proj.Conclude, &proj.Size, &proj.Path); err != nil {
+		if err := res.Scan(&proj.Id, &proj.Title, &proj.Descr, &proj.Atime, &proj.Conclude, &proj.Path); err != nil {
+		//if err := res.Scan(&proj.Id, &proj.Title, &proj.Descr, &proj.Atime, &proj.Conclude, &proj.Size, &proj.Path); err != nil {
 			fmt.Println("Scan error")
 			return nil, err
 		}
@@ -216,6 +173,43 @@ func DelProj(id int64) error {
 	}
 }
 
+func SearchProj(keywords []string)([]PROJINFO,error){
+    db, err := sql.Open("mysql", "work:abcd1234@tcp(123.206.55.31:3306)/tests") //?charset=utf8")
+    //db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
+    if err != nil {
+        fmt.Println("Open database failed")
+        return nil, err
+    }
+    defer db.Close()
+
+    query:= "select * from proj where "
+	for index,arg:=range keywords{
+		if index!=0{
+			query+=" AND "
+		}
+		query+=fmt.Sprintf("(title like '%%%s%%' OR descr like '%%%s%%' OR conclude like '%%%s%%' OR path like '%%%s%%' ",arg,arg,arg,arg)
+		_,err:=strconv.Atoi(arg)
+		if err==nil{
+			query+=(" OR proj_id = "+arg)
+		}
+		query += ")"
+	}
+    res, _ := db.Query(query)
+    defer res.Close()
+
+    projs := make([]PROJINFO,0,100)
+    for i := 0; res.Next(); i++ {
+		proj:=new (PROJINFO)
+        proj.IsDir = true
+        err = res.Scan(&proj.Id, &proj.Title, &proj.Descr, &proj.Atime, &proj.Conclude, &proj.Path)
+        if err != nil {
+            return nil, err
+        }
+		projs=append(projs,*proj)
+    }
+    return projs, nil
+}
+
 func ListProj() ([]PROJINFO, error) {
 	db, err := sql.Open("mysql", "work:abcd1234@tcp(123.206.55.31:3306)/tests") //?charset=utf8")
 	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
@@ -236,7 +230,7 @@ func ListProj() ([]PROJINFO, error) {
 	defer res.Close()
 	for i := 0; res.Next(); i++ {
 		projs[i].IsDir = true
-		err = res.Scan(&projs[i].Id, &projs[i].Title, &projs[i].Descr, &projs[i].Atime, &projs[i].Conclude, &projs[i].Size, &projs[i].Path)
+		err = res.Scan(&projs[i].Id, &projs[i].Title, &projs[i].Descr, &projs[i].Atime, &projs[i].Conclude, &projs[i].Path)
 		if err != nil {
 			return nil, err
 		}
@@ -284,7 +278,7 @@ func (info *PROJINFO) CreateInDB() error {
 	tm := time.Now().Local()
 	info.Atime = fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d", tm.Year(), tm.Month(), tm.Day(), tm.Hour(), tm.Minute(), tm.Second())
 	//	st,err:=db.Prepare("insert proj set title=?,descr=?,projtime=?,conclude=?,
-	query := fmt.Sprintf("insert into proj (title,descr,projtime,conclude,fsize,path) values ('%s','%s','%s','%s',%d,'%s')", info.Title, info.Descr, info.Atime, info.Conclude, info.Size, info.Path)
+	query := fmt.Sprintf("insert into proj (title,descr,projtime,conclude,path) values ('%s','%s','%s','%s','%s')", info.Title, info.Descr, info.Atime, info.Conclude, info.Path)
 	if result, err := db.Exec(query); err == nil {
 		info.Id, _ = result.LastInsertId()
 		return nil
