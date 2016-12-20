@@ -322,7 +322,7 @@ server side:
 		}
 
 	default:
-		fmt.Println("Unknown command:", command)
+		fmt.Println("Unknown command:", string(command))
 	}
 }
 
