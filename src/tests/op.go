@@ -28,16 +28,9 @@ type PROJINFO struct {
 	Size     int64
 }
 
-func (info *PROJINFO) dumpInfo() {
-	fmt.Println("Id=", info.Id)
-	fmt.Println("Title=", info.Title)
-	fmt.Println("Atime=", info.Atime)
-	fmt.Println("Descr=", info.Descr)
-	fmt.Println("Conclude=", info.Conclude)
-	fmt.Println("Path=", info.Path)
-	//	fmt.Println("IsDir=",info.IsDir)
-	fmt.Println("Size=", info.Size)
-	fmt.Println("")
+func (info *PROJINFO) dumpInfo()string {
+	return fmt.Sprintf("Id=%d\nTitle=%s\nAtime=%s\nDescr=%s\nConclude=%s\nPath=%s\n",
+	info.Id, info.Title, info.Atime, info.Descr, info.Conclude, info.Path)
 }
 
 func (info *PROJINFO) remoteCreate() (int64, error) {
@@ -102,9 +95,9 @@ func (info *PROJINFO) remoteCreate() (int64, error) {
 	// copy file
 	rd, _ := os.Open(tmpfile)
 	defer rd.Close()
-	if _,err:=io.CopyN(conn, rd, info.Size);err!=nil{
-		fmt.Println("Copy file to server error:",err)
-		return -1,errors.New("Create--Copy file error")
+	if _, err := io.CopyN(conn, rd, info.Size); err != nil {
+		fmt.Println("Copy file to server error:", err)
+		return -1, errors.New("Create--Copy file error")
 	}
 
 	result, _, err := rb.ReadLine()
@@ -118,7 +111,6 @@ func (info *PROJINFO) remoteCreate() (int64, error) {
 	if err := json.Unmarshal(buf, info); err != nil {
 		return -1, errors.New("Create--resolve remote data error")
 	}
-	info.dumpInfo()
 	return info.Id, nil
 }
 
@@ -234,7 +226,7 @@ func doEdit(id int64) {
 	conn.Write([]byte(ctext))
 }
 
-func doBrowse(id int64){
+func doBrowse(id int64) {
 	conn, err := net.Dial("tcp", rsvr+rport)
 	if err != nil {
 		fmt.Println("connect to server error")
@@ -253,100 +245,91 @@ func doBrowse(id int64){
 	}
 }
 
-func doUpdate(id int64, projfile string, localfile string){
-/*
-client side:
-	-> Update\n
-	-> ID \n
-	-> projfile \n
-<- nOrgFileSize\n | ERROR No such file\n
-	-> nFileSize \n | CANCEL \n
-	->RawFile
-<- OK | ERROR
-*/
+func doUpdate(id int64, projfile string, localfile string) {
+	/*
+	   client side:
+	   	-> Update\n
+	   	-> ID \n
+	   	-> projfile \n
+	   <- nOrgFileSize\n | ERROR No such file\n
+	   	-> nFileSize \n | CANCEL \n
+	   	->RawFile
+	   <- OK | ERROR
+	*/
 
-	fLocal,err:=os.Stat(localfile)
-	if err!=nil{
-		fmt.Println("Can't find file: ",localfile)
+	fLocal, err := os.Stat(localfile)
+	if err != nil {
+		fmt.Println("Can't find file: ", localfile)
 		return
-	}else if fLocal.IsDir(){
+	} else if fLocal.IsDir() {
 		fmt.Println("Support update a file only.")
 		return
 	}
-	conn,err:=net.Dial("tcp",rsvr+rport)
-	if err!=nil{
+	conn, err := net.Dial("tcp", rsvr+rport)
+	if err != nil {
 		fmt.Println("connect to server error")
 		return
 	}
 	defer conn.Close()
-	conn.Write([]byte(fmt.Sprintf("Update\n%d\n%s\n",id,projfile)))
-	rd:=bufio.NewReader(conn)
-	line,_,err:=rd.ReadLine()
-	reply:=string(line)
-	if strings.Contains(reply,"ERROR"){
-		fmt.Println("Update error:\n",reply)
+	conn.Write([]byte(fmt.Sprintf("Update\n%d\n%s\n", id, projfile)))
+	rd := bufio.NewReader(conn)
+	line, _, err := rd.ReadLine()
+	reply := string(line)
+	if strings.Contains(reply, "ERROR") {
+		fmt.Println("Update error:\n", reply)
 		return
 	}
-	var rsize int64 =0
-	lsize:=fLocal.Size()
-	if _,err:=fmt.Sscanf(reply,"%d",&rsize);err!=nil{
+	var rsize int64 = 0
+	lsize := fLocal.Size()
+	if _, err := fmt.Sscanf(reply, "%d", &rsize); err != nil {
 		fmt.Println("Resolve remote file size error.")
 		return
 	}
-	fmt.Printf("Replace remote file: %s(%d bytes) by local file %s(%dbytes)? (yes)",projfile,rsize,localfile,lsize)
-	cf:="yes"
-	fmt.Scanf("%s",&cf)
-	if cf != "yes"{
+	fmt.Printf("Replace remote file: %s(%d bytes) by local file %s(%dbytes)? (yes)", projfile, rsize, localfile, lsize)
+	cf := "yes"
+	fmt.Scanf("%s", &cf)
+	if cf != "yes" {
 		fmt.Println("Update cancelled!")
 		conn.Write([]byte("CANCEL\n"))
-	}else{
-		conn.Write([]byte(fmt.Sprintf("%d\n",lsize)))
-		sfile,_:=os.Open(localfile)
+	} else {
+		conn.Write([]byte(fmt.Sprintf("%d\n", lsize)))
+		sfile, _ := os.Open(localfile)
 		defer sfile.Close()
-		if _,err:=io.CopyN(conn,sfile,lsize);err!=nil{
+		if _, err := io.CopyN(conn, sfile, lsize); err != nil {
 			fmt.Println("Upload file failed")
 			return
 		}
-		if line,_,err:=rd.ReadLine();err!=nil {
-			fmt.Println("Get update result error: ",err)
-		} else if  string(line)!="OK"{
+		if line, _, err := rd.ReadLine(); err != nil {
+			fmt.Println("Get update result error: ", err)
+		} else if string(line) != "OK" {
 			fmt.Println("Update file error: ", string(line))
-		} else{
+		} else {
 			fmt.Println("Update file ok!")
 		}
 	}
 }
 
-func doGetFile(id int64, path string){
-	conn,err:=net.Dial("tcp",rsvr+rport)
-	if err!=nil{
+func doGetFile(id int64, path string) {
+	conn, err := net.Dial("tcp", rsvr+rport)
+	if err != nil {
 		fmt.Println("connect to server error")
 		return
 	}
 	defer conn.Close()
-	conn.Write([]byte(fmt.Sprintf("Get\n%d\n%s\n",id,path)))
-	rd:=bufio.NewReader(conn)
-/*	line,_,err:=rd.ReadLine()
-	if err!=nil{
-		fmt.Println("Get result from server error: ",err)
-		return
-	}
-	if string(line)=="OK"{*/
-		for {
-			fline,longline,err:=rd.ReadLine()
-			if err!=nil{
-				break
-			}else{
-				if longline{
-					fmt.Print(string(fline))
-				}else{
-					fmt.Println(string(fline))
-				}
+	conn.Write([]byte(fmt.Sprintf("Get\n%d\n%s\n", id, path)))
+	rd := bufio.NewReader(conn)
+	for {
+		fline, longline, err := rd.ReadLine()
+		if err != nil {
+			break
+		} else {
+			if longline {
+				fmt.Print(string(fline))
+			} else {
+				fmt.Println(string(fline))
 			}
 		}
-/*	} else{
-		fmt.Println(string(line))
-	}*/
+	}
 }
 
 func doList() {
@@ -375,7 +358,7 @@ func doList() {
 		if err := json.Unmarshal(line, obj); err != nil {
 			fmt.Println("Resolve obj error:\n", string(line), "\n", err)
 		} else {
-			obj.dumpInfo()
+			fmt.Println(obj.dumpInfo())
 		}
 	}
 }
@@ -393,6 +376,56 @@ func ParseInput(conn net.Conn) {
 		line = append(line, '\n')
 		if _, err := conn.Write(line); err != nil {
 			break
+		}
+	}
+}
+
+func doSearch(keywords []string) {
+	conn, err := net.Dial("tcp", rsvr+rport)
+	if err != nil {
+		fmt.Println("connect to server error")
+		return
+	}
+	defer conn.Close()
+	/*
+	   search client:
+	   	-> Search\n
+	   	-> nArgs
+	   	-> keyword1\n
+	   	-> keyword2\n
+	   	-> ...
+	   	-> keywordn\n
+	   <- nProjs
+	   <- Result
+	*/
+	conn.Write([]byte(fmt.Sprintf("Search\n%d\n", len(keywords))))
+	for _, arg := range keywords {
+		conn.Write([]byte(arg + "\n"))
+	}
+	rd := bufio.NewReader(conn)
+	var nObj int64 = 0
+	if objline, _, err := rd.ReadLine(); err != nil {
+		fmt.Println("Get project's number error:", err)
+		return
+	} else {
+		fmt.Sscanf(string(objline), "%d", &nObj)
+	}
+	obj := new(PROJINFO)
+	var i int64
+	for i = 0; i < nObj; i++ {
+		line, _, err := rd.ReadLine()
+		if err != nil {
+			fmt.Println("Get remote data error:", err.Error())
+			break
+		}
+		if err := json.Unmarshal(line, obj); err != nil {
+			fmt.Println("Resolve obj error:\n", string(line), "\n", err)
+		} else {
+			objinfo:=obj.dumpInfo()
+			for _,kw:=range keywords{
+				objinfo=strings.Replace(objinfo,kw,"/**"+kw+"**/",-1)
+			}
+			fmt.Println(objinfo)
 		}
 	}
 }

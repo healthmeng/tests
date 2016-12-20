@@ -42,6 +42,12 @@ func tryCreate() {
 }
 
 func searchProj() {
+	nArgs:=len(os.Args)
+	if nArgs<3{
+		prtUsage()
+	}else{
+		doSearch(os.Args[2:])
+	}
 }
 
 func listProj() {
