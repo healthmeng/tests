@@ -317,19 +317,7 @@ func doGetFile(id int64, path string) {
 	}
 	defer conn.Close()
 	conn.Write([]byte(fmt.Sprintf("Get\n%d\n%s\n", id, path)))
-	rd := bufio.NewReader(conn)
-	for {
-		fline, longline, err := rd.ReadLine()
-		if err != nil {
-			break
-		} else {
-			if longline {
-				fmt.Print(string(fline))
-			} else {
-				fmt.Println(string(fline))
-			}
-		}
-	}
+	io.Copy(os.Stdout,conn)
 }
 
 func doList() {
