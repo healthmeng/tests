@@ -14,6 +14,9 @@ import (
 	"time"
 )
 
+var dbdrv string ="mysql"
+var dblogin string="work:abcd1234@tcp(123.206.55.31:3306)/tests"
+
 type PROJINFO struct {
 	Id       int64
 	Title    string
@@ -130,7 +133,7 @@ func BrowseProj(id int64) ([]string, error) {
 }
 
 func LookforID(id int64) (*PROJINFO, error) {
-	db, err := sql.Open("mysql", "work:abcd1234@tcp(123.206.55.31:3306)/tests")
+	db, err := sql.Open(dbdrv,dblogin) 
 	if err != nil {
 		fmt.Println("Open database failed")
 		return nil, err
@@ -153,7 +156,7 @@ func LookforID(id int64) (*PROJINFO, error) {
 }
 
 func DelProj(id int64) error {
-	db, err := sql.Open("mysql", "work:abcd1234@tcp(123.206.55.31:3306)/tests") //?charset=utf8")
+	db, err := sql.Open(dbdrv,dblogin)
 	if err != nil {
 		fmt.Println("Open database failed")
 		return err
@@ -174,7 +177,7 @@ func DelProj(id int64) error {
 }
 
 func SearchProj(keywords []string)([]PROJINFO,error){
-    db, err := sql.Open("mysql", "work:abcd1234@tcp(123.206.55.31:3306)/tests") //?charset=utf8")
+	db, err := sql.Open(dbdrv,dblogin)
     //db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
     if err != nil {
         fmt.Println("Open database failed")
@@ -211,7 +214,7 @@ func SearchProj(keywords []string)([]PROJINFO,error){
 }
 
 func ListProj() ([]PROJINFO, error) {
-	db, err := sql.Open("mysql", "work:abcd1234@tcp(123.206.55.31:3306)/tests") //?charset=utf8")
+	db, err := sql.Open(dbdrv,dblogin)
 	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
 	if err != nil {
 		fmt.Println("Open database failed")
@@ -245,7 +248,7 @@ func (info *PROJINFO) InitDir(tmpfile string) error {
 }
 
 func (info *PROJINFO) UpdateDB() error {
-	db, err := sql.Open("mysql", "work:abcd1234@tcp(123.206.55.31:3306)/tests") //?charset=utf8")
+	db, err := sql.Open(dbdrv,dblogin)
 	if err != nil {
 		fmt.Println("Open database failed")
 		return err
@@ -267,8 +270,7 @@ func (info *PROJINFO) UpdateDB() error {
 }
 
 func (info *PROJINFO) CreateInDB() error {
-	db, err := sql.Open("mysql", "work:abcd1234@tcp(123.206.55.31:3306)/tests")
-
+	db, err := sql.Open(dbdrv,dblogin)
 	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")  // this will get messed code in Chinese
 	if err != nil {
 		fmt.Println("Open database failed")
