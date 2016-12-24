@@ -59,7 +59,7 @@ func procConn(conn net.Conn) {
 			crfile.Close()
 			if recverr!=nil || size!=proj.Size{
 				fmt.Println("Receive file error")
-				conn.Write([]byte("Receive file error"))
+				conn.Write([]byte("ERROR Receive file error"))
 				return
 			}
 			if err := proj.CreateInDB(); err != nil {
@@ -105,7 +105,7 @@ func procConn(conn net.Conn) {
 			var nID int64
 			fmt.Sscanf(string(bufid), "%d", &nID)
 			if err := backend.DelProj(nID); err != nil {
-				conn.Write([]byte("Del failed:" + err.Error()))
+				conn.Write([]byte("ERROR Del failed:" + err.Error()))
 			} else {
 				conn.Write([]byte("Del success!"))
 			}
@@ -151,7 +151,7 @@ server side:
 			fmt.Sscanf(string(bufid),"%d",&nID)
 			if files,err:=backend.BrowseProj(nID);err!=nil{
 				fmt.Println("Browse proj failed:",err)
-				conn.Write([]byte("Browse proj error:"+err.Error()))
+				conn.Write([]byte("ERROR Browse proj error:"+err.Error()))
 			}else{
 				for _,line:=range(files){
 					conn.Write([]byte(line+"\n"))
@@ -236,7 +236,7 @@ server side:
 			var nID int64
 			fmt.Sscanf(string(bufid), "%d", &nID)
 			if proj, err := backend.LookforID(nID); err != nil {
-				conn.Write([]byte("Can't find id in db:" + err.Error()))
+				conn.Write([]byte("ERROR Can't find id in db:" + err.Error()))
 			} else {
 				conn.Write([]byte("OK\n"))
 				obj, _ := json.Marshal(proj)
@@ -253,7 +253,7 @@ server side:
 						conn.Write([]byte("ERROR " + err.Error()))
 					} else {
 						if err = proj.UpdateDB(); err != nil {
-							conn.Write([]byte("Update database failed:" + err.Error()))
+							conn.Write([]byte("ERROR Update database failed:" + err.Error()))
 						} else {
 							conn.Write([]byte("Edit success!"))
 						}
@@ -306,7 +306,7 @@ server side:
 				param, _, err := rd.ReadLine()
 				if err != nil {
 					fmt.Println("Get parameters failed.")
-					conn.Write([]byte("Parameters error"))
+					conn.Write([]byte("ERROR Parameters error"))
 					return
 				}
 				params = append(params, string(param))
