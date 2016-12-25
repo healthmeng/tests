@@ -31,7 +31,7 @@ type PROJINFO struct {
 }
 
 func (info *PROJINFO) dumpInfo()string {
-	return fmt.Sprintf("Id=%d\nTitle=%s\nAtime=%s\nDescr=%s\nConclude=%s\nPath=%s\n",
+	return fmt.Sprintf("Project id: %d\nTitle: %s\nLast modified: %s\nDescription: %s\nConclusion: %s\nPath: %s\n",
 	info.Id, info.Title, info.Atime, info.Descr, info.Conclude, info.Path)
 }
 
@@ -417,10 +417,11 @@ func doList() {
 			fmt.Println(obj.dumpInfo())
 		}
 	}
+	fmt.Println(nObj,"projects listed.\n")
 }
 
 func createInfo(path string, isdir bool) *PROJINFO {
-	info := &PROJINFO{-1, "noname", "atime", "No comment.", "No explain,obviously.", path, isdir, 0}
+	info := &PROJINFO{-1, "noname", "atime", "No comment.", "No explain, obviously.", path, isdir, 0}
 	info.scanInfo()
 	return info
 }
