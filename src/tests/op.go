@@ -9,8 +9,10 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strconv"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -226,11 +228,12 @@ func doEdit(id int64) {
 	conn.Write([]byte(ctext))
 }
 
-func doBrowse(id int64) {
+func getBrowseContent(id int64) []string{
+	projsrc:=make([]string,0,50)
 	conn, err := net.Dial("tcp", rsvr+rport)
 	if err != nil {
 		fmt.Println("connect to server error")
-		return
+		return nil
 	}
 	defer conn.Close()
 	conn.Write([]byte(fmt.Sprintf("Browse\n%d\n", id)))
@@ -240,7 +243,18 @@ func doBrowse(id int64) {
 		if err != nil {
 			break
 		} else {
-			fmt.Println(string(line))
+		//	fmt.Println(string(line))
+			projsrc=append(projsrc,string(line))
+		}
+	}
+	return projsrc
+}
+
+func doBrowse(id int64) {
+	projsrc:=getBrowseContent(id)
+	if projsrc != nil{
+		for _,line:=range projsrc{
+			fmt.Println(line)
 		}
 	}
 }
@@ -310,14 +324,68 @@ func doUpdate(id int64, projfile string, localfile string) {
 }
 
 func doGetFile(id int64, path string) {
+	doGetFileContent(id,path,os.Stdout)
+}
+
+func doGetFileContent(id int64, path string, dst io.Writer) error{
 	conn, err := net.Dial("tcp", rsvr+rport)
 	if err != nil {
 		fmt.Println("connect to server error")
-		return
+		return errors.New("connect to server")
 	}
 	defer conn.Close()
 	conn.Write([]byte(fmt.Sprintf("Get\n%d\n%s\n", id, path)))
-	io.Copy(os.Stdout,conn)
+	_,err=io.Copy(dst,conn)
+	return err
+}
+
+func doCloneProj(id int64){
+	projsrc:=getBrowseContent(id)
+	if projsrc == nil{
+		return
+	}
+	if len(projsrc) ==1 &&  strings.HasPrefix(projsrc[0],"ERROR "){
+			fmt.Println(projsrc[0])
+			return
+	}
+	projpath:=fmt.Sprintf("testsproj-%d",id)
+	if _,err:=os.Stat(projpath); err ==nil{
+		fmt.Println(projpath+" already exists")
+		return
+	}
+	if err:=os.Mkdir(projpath,0755);err!=nil{
+		fmt.Println(err)
+		return
+	}
+	os.Chdir(projpath)
+	patdir,_:=regexp.Compile("^\\[dir\\]\\s+(\\S+.*)$")
+	patfile,_:=regexp.Compile("^\\s+\\[(\\d+),(\\d+)\\]\\s+(\\S+.*)$")
+
+	for _,line:=range projsrc{
+		if dirname:=patdir.FindStringSubmatch(line);dirname!=nil{
+			os.Mkdir(dirname[1],0755)// since parent create successfully, do not check error here
+		}else if file:=patfile.FindStringSubmatch(line); file!=nil{
+			//fmt.Println(filename[1],filename[2],filename[3])
+			mode,_:=strconv.ParseInt(file[2],8,32)
+			fmode:=os.FileMode(mode)
+			if cfile,err:=os.OpenFile(file[3],os.O_CREATE|os.O_WRONLY,fmode);err!=nil{
+				fmt.Println(err)
+				return
+			}else {
+				// os.Remove maybe used, so defer cfile.Close is avoid here
+				err:=doGetFileContent(id,file[3],cfile)
+				if err!=nil{
+					fmt.Println(err)
+					cfile.Close()
+					os.Remove(file[3])
+					return
+				}else {
+					cfile.Close()
+				}
+			}
+		}
+	}
+	fmt.Println ("Project sources download successfully in ./"+projpath)
 }
 
 func doList() {
