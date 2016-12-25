@@ -15,11 +15,11 @@ func prtUsage() {
 	fmt.Println("\tcreate, -c dir|file: Create(upload) a test project.")
 	fmt.Println("\tdel, -d proj_id: Delete a project.")
 	fmt.Println("\tedit, -e proj_id: Edit an existing remote project's info.")
-	fmt.Println("\tget, -g proj_id [srcfile]: Download whole proj to current directory OR  a source file from project.")
-	fmt.Println("\tlist, -l | -l [id]: List all test projects and their infomations(IDs may be most useful) OR list project directory of certain id.")
+	fmt.Println("\tget, -g proj_id | -l proj_id srcfile(including relative directory): Download whole proj to current directory OR  a source file from project.")
+	fmt.Println("\tlist, -l | -l id: List all test projects and their infomations(IDs may be most useful) OR list project directory of certain id.")
 	fmt.Println("\trun, -r proj_id [arg1 arg2 arg3...]: Run a proj, get commandline result. The args are only valid when project is a single source file.")
 	fmt.Println("\tsearch, -s keyword1[, keyword2,keyword3...]: Search a project by keywords.")
-	fmt.Println("\tupdate, -u proj_id proj_file(including path) localfile: Update a source file of an existed project.")
+	fmt.Println("\tupdate, -u proj_id proj_file(including relative directory) localfile: Update a source file of an existed project.")
 }
 
 func tryCreate() {
