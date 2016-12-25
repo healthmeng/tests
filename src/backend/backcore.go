@@ -107,7 +107,7 @@ func makeOutput(rootdir string, dfiles []string) ([]string, error) {
 			if isdir {
 				result = append(result, "[dir] "+final)
 			} else {
-				result = append(result, fmt.Sprintf("\t[%d] %s",pinfo.Size(),final))
+				result = append(result, fmt.Sprintf("      [%d] %s",pinfo.Size(),final))
 			}
 		}
 		return result, nil
