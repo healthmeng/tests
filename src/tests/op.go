@@ -31,7 +31,7 @@ type PROJINFO struct {
 }
 
 func (info *PROJINFO) dumpInfo()string {
-	return fmt.Sprintf("Project id: %d\nTitle: %s\nLast modified: %s\nDescription: %s\nConclusion: %s\nPath: %s\n",
+	return fmt.Sprintf("ProjectID = [%d]\nTitle = [%s]\nModified = [%s]\nDescription = [%s]\nConclusion = [%s]\nPath = [%s]\n",
 	info.Id, info.Title, info.Atime, info.Descr, info.Conclude, info.Path)
 }
 
