@@ -8,18 +8,18 @@ import (
 )
 
 func prtUsage() {
-	fmt.Println("Tests is a tool to collect your test codes and makes it easy for later review.")
+	fmt.Println("\n\ttests is a tool to collect your test codes and makes it easy for later review.\n")
 	fmt.Println("Usage:")
-	fmt.Println("\ttests command [args]")
-	fmt.Println("commands include:")
-	fmt.Println("\tcreate, -c dir|file: Create(upload) a test project.")
-	fmt.Println("\tdel, -d proj_id: Delete a project.")
-	fmt.Println("\tedit, -e proj_id: Edit an existing remote project's info.")
-	fmt.Println("\tget, -g proj_id | -l proj_id srcfile(including relative directory): Download whole proj to current directory OR  a source file from project.")
-	fmt.Println("\tlist, -l | -l id: List all test projects and their infomations(IDs may be most useful) OR list project directory of certain id.")
-	fmt.Println("\trun, -r proj_id [arg1 arg2 arg3...]: Run a proj, get commandline result. The args are only valid when project is a single source file.")
-	fmt.Println("\tsearch, -s keyword1[, keyword2,keyword3...]: Search a project by keywords.")
-	fmt.Println("\tupdate, -u proj_id proj_file(including relative directory) localfile: Update a source file of an existed project.")
+	fmt.Println("\ttests command [args]\n")
+	fmt.Println("Commands include:")
+	fmt.Println("\tcreate, -c dir|file\n\t\tCreate(upload) a test project.\n")
+	fmt.Println("\tdel, -d proj_id\n\t\tDelete a project.\n")
+	fmt.Println("\tedit, -e proj_id:\n\t\tEdit an existing remote project's info.\n")
+	fmt.Println("\tget, -g proj_id | -l proj_id srcfile(including relative directory)\n\t\tDownload the whole project OR a source file of project to current directory.\n")
+	fmt.Println("\tlist, -l | -l id\n\t\tList all test projects and their infomations(IDs may be most useful) OR list project directory of certain id.\n")
+	fmt.Println("\trun, -r proj_id [arg1 arg2 arg3...]\n\t\tRun a proj, get commandline result. The args are only valid when project is a single source file.\n")
+	fmt.Println("\tsearch, -s keyword1[ keyword2 keyword3...]\n\t\tSearch a project by keywords.\n")
+	fmt.Println("\tupdate, -u proj_id proj_file(including relative directory) localfile\n\t\tUpdate a source file of an existed project.\n")
 }
 
 func tryCreate() {
