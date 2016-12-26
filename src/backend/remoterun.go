@@ -12,6 +12,7 @@ import (
 "backend/runsrc"
 _"backend/rungo"
 _"backend/runcncpp"
+_"backend/runpy"
 _"backend/runscript"
 )
 
