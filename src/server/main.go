@@ -6,6 +6,7 @@ import (
 	"net"
 	//"sync"
 	//"os/exec"
+	"strconv"
 	"time"
 	"strings"
 	"backend"
@@ -96,6 +97,14 @@ func procConn(conn net.Conn) {
 			objbuf, _ := json.Marshal(projs[i])
 			line := string(objbuf) + "\n"
 			conn.Write([]byte(line))
+		}
+
+	case "Plugin":
+		plugins:=backend.GetPlugins()
+		nPlugin:=len(plugins)
+		conn.Write([]byte(strconv.Itoa(nPlugin)+"\n"))
+		for i:=0;i<nPlugin;i++{
+			conn.Write([]byte(plugins[i]+"\n"))
 		}
 
 	case "Del":
