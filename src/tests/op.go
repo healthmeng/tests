@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"strconv"
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -30,9 +30,9 @@ type PROJINFO struct {
 	Size     int64
 }
 
-func (info *PROJINFO) dumpInfo()string {
+func (info *PROJINFO) dumpInfo() string {
 	return fmt.Sprintf("ProjectID = [%d]\nTitle = [%s]\nModified = [%s]\nDescription = [%s]\nConclusion = [%s]\nPath = [%s]\n",
-	info.Id, info.Title, info.Atime, info.Descr, info.Conclude, info.Path)
+		info.Id, info.Title, info.Atime, info.Descr, info.Conclude, info.Path)
 }
 
 func (info *PROJINFO) remoteCreate() (int64, error) {
@@ -228,14 +228,14 @@ func doEdit(id int64) {
 	conn.Write([]byte(ctext))
 }
 
-func getBrowseContent(id int64) []string{
-	projsrc:=make([]string,0,50)
+func getBrowseContent(id int64) []string {
 	conn, err := net.Dial("tcp", rsvr+rport)
 	if err != nil {
 		fmt.Println("connect to server error")
 		return nil
 	}
 	defer conn.Close()
+	projsrc := make([]string, 0, 50)
 	conn.Write([]byte(fmt.Sprintf("Browse\n%d\n", id)))
 	rd := bufio.NewReader(conn)
 	for {
@@ -243,17 +243,17 @@ func getBrowseContent(id int64) []string{
 		if err != nil {
 			break
 		} else {
-		//	fmt.Println(string(line))
-			projsrc=append(projsrc,string(line))
+			//	fmt.Println(string(line))
+			projsrc = append(projsrc, string(line))
 		}
 	}
 	return projsrc
 }
 
 func doBrowse(id int64) {
-	projsrc:=getBrowseContent(id)
-	if projsrc != nil{
-		for _,line:=range projsrc{
+	projsrc := getBrowseContent(id)
+	if projsrc != nil {
+		for _, line := range projsrc {
 			fmt.Println(line)
 		}
 	}
@@ -324,10 +324,10 @@ func doUpdate(id int64, projfile string, localfile string) {
 }
 
 func doGetFile(id int64, path string) {
-	doGetFileContent(id,path,os.Stdout)
+	doGetFileContent(id, path, os.Stdout)
 }
 
-func doGetFileContent(id int64, path string, dst io.Writer) error{
+func doGetFileContent(id int64, path string, dst io.Writer) error {
 	conn, err := net.Dial("tcp", rsvr+rport)
 	if err != nil {
 		fmt.Println("connect to server error")
@@ -335,57 +335,57 @@ func doGetFileContent(id int64, path string, dst io.Writer) error{
 	}
 	defer conn.Close()
 	conn.Write([]byte(fmt.Sprintf("Get\n%d\n%s\n", id, path)))
-	_,err=io.Copy(dst,conn)
+	_, err = io.Copy(dst, conn)
 	return err
 }
 
-func doCloneProj(id int64){
-	projsrc:=getBrowseContent(id)
-	if projsrc == nil{
+func doCloneProj(id int64) {
+	projsrc := getBrowseContent(id)
+	if projsrc == nil {
 		return
 	}
-	if len(projsrc) ==1 &&  strings.HasPrefix(projsrc[0],"ERROR "){
-			fmt.Println(projsrc[0])
-			return
-	}
-	projpath:=fmt.Sprintf("testsproj-%d",id)
-	if _,err:=os.Stat(projpath); err ==nil{
-		fmt.Println(projpath+" already exists")
+	if len(projsrc) == 1 && strings.HasPrefix(projsrc[0], "ERROR ") {
+		fmt.Println(projsrc[0])
 		return
 	}
-	if err:=os.Mkdir(projpath,0755);err!=nil{
+	projpath := fmt.Sprintf("testsproj-%d", id)
+	if _, err := os.Stat(projpath); err == nil {
+		fmt.Println(projpath + " already exists")
+		return
+	}
+	if err := os.Mkdir(projpath, 0755); err != nil {
 		fmt.Println(err)
 		return
 	}
 	os.Chdir(projpath)
-	patdir,_:=regexp.Compile("^\\[dir\\]\\s+(\\S+.*)$")
-	patfile,_:=regexp.Compile("^\\s+\\[(\\d+),(\\d+)\\]\\s+(\\S+.*)$")
+	patdir, _ := regexp.Compile("^\\[dir\\]\\s+(\\S+.*)$")
+	patfile, _ := regexp.Compile("^\\s+\\[(\\d+),(\\d+)\\]\\s+(\\S+.*)$")
 
-	for _,line:=range projsrc{
-		if dirname:=patdir.FindStringSubmatch(line);dirname!=nil{
-			os.Mkdir(dirname[1],0755)// since parent create successfully, do not check error here
-		}else if file:=patfile.FindStringSubmatch(line); file!=nil{
+	for _, line := range projsrc {
+		if dirname := patdir.FindStringSubmatch(line); dirname != nil {
+			os.Mkdir(dirname[1], 0755) // since parent create successfully, do not check error here
+		} else if file := patfile.FindStringSubmatch(line); file != nil {
 			//fmt.Println(filename[1],filename[2],filename[3])
-			mode,_:=strconv.ParseInt(file[2],8,32)
-			fmode:=os.FileMode(mode)
-			if cfile,err:=os.OpenFile(file[3],os.O_CREATE|os.O_WRONLY,fmode);err!=nil{
+			mode, _ := strconv.ParseInt(file[2], 8, 32)
+			fmode := os.FileMode(mode)
+			if cfile, err := os.OpenFile(file[3], os.O_CREATE|os.O_WRONLY, fmode); err != nil {
 				fmt.Println(err)
 				return
-			}else {
+			} else {
 				// os.Remove maybe used, so defer cfile.Close is avoid here
-				err:=doGetFileContent(id,file[3],cfile)
-				if err!=nil{
+				err := doGetFileContent(id, file[3], cfile)
+				if err != nil {
 					fmt.Println(err)
 					cfile.Close()
 					os.Remove(file[3])
 					return
-				}else {
+				} else {
 					cfile.Close()
 				}
 			}
 		}
 	}
-	fmt.Println ("Project sources download successfully in ./"+projpath)
+	fmt.Println("Project sources download successfully in ./" + projpath)
 }
 
 func doList() {
@@ -409,7 +409,7 @@ func doList() {
 		line, _, err = rb.ReadLine()
 		if err != nil {
 			fmt.Println("Get remote data error:", err.Error())
-			break
+			return
 		}
 		if err := json.Unmarshal(line, obj); err != nil {
 			fmt.Println("Resolve obj error:\n", string(line), "\n", err)
@@ -417,7 +417,34 @@ func doList() {
 			fmt.Println(obj.dumpInfo())
 		}
 	}
-	fmt.Println(nObj,"projects listed.\n")
+	fmt.Println(nObj, "projects listed.\n")
+	ListPlugins()
+}
+
+func ListPlugins() {
+	conn, err := net.Dial("tcp", rsvr+rport)
+	if err != nil {
+		fmt.Println("connect to server error")
+		return
+	}
+	defer conn.Close()
+	conn.Write([]byte("Plugin\n"))
+	rd := bufio.NewReader(conn)
+	if line, _, err := rd.ReadLine(); err != nil {
+		return
+	} else {
+		if nPlugin, _ := strconv.Atoi(string(line)); nPlugin != 0 {
+			fmt.Println("The source code of following language may be run directly:")
+			for i := 0; i < nPlugin; i++ {
+				if line, _, err := rd.ReadLine(); err == nil {
+					fmt.Print(string(line) + "  ")
+				} else {
+					break
+				}
+			}
+			fmt.Println("")
+		}
+	}
 }
 
 func createInfo(path string, isdir bool) *PROJINFO {
@@ -478,9 +505,9 @@ func doSearch(keywords []string) {
 		if err := json.Unmarshal(line, obj); err != nil {
 			fmt.Println("Resolve obj error:\n", string(line), "\n", err)
 		} else {
-			objinfo:=obj.dumpInfo()
-			for _,kw:=range keywords{
-				objinfo=strings.Replace(objinfo,kw,"\033[7m"+kw+"\033[0m",-1)
+			objinfo := obj.dumpInfo()
+			for _, kw := range keywords {
+				objinfo = strings.Replace(objinfo, kw, "\033[7m"+kw+"\033[0m", -1)
 			}
 			fmt.Println(objinfo)
 		}
