@@ -326,6 +326,7 @@ func doUpdate(id int64, projfile string, localfile string) {
 
 func doGetFile(id int64, path string) {
 	doGetFileContent(id, path, os.Stdout)
+	fmt.Println("")
 }
 
 func doGetFileContent(id int64, path string, dst io.Writer) error {
@@ -361,10 +362,15 @@ func doCloneProj(id int64) {
 	os.Chdir(projpath)
 	patdir, _ := regexp.Compile("^\\[dir\\]\\s+(\\S+.*)$")
 	patfile, _ := regexp.Compile("^\\s+\\[(\\d+),(\\d+)\\]\\s+(\\S+.*)$")
-
+	nAll:=len(projsrc)
+	nCur:=0
 	for _, line := range projsrc {
+		nCur++
+		prog:=fmt.Sprintf("(%d/%d)\t",nCur,nAll)
 		if dirname := patdir.FindStringSubmatch(line); dirname != nil {
+			fmt.Print(prog+dirname[1]+"...")
 			os.Mkdir(dirname[1], 0755) // since parent create successfully, do not check error here
+			fmt.Println("OK")
 		} else if file := patfile.FindStringSubmatch(line); file != nil {
 			//fmt.Println(filename[1],filename[2],filename[3])
 			mode, _ := strconv.ParseInt(file[2], 8, 32)
@@ -374,14 +380,17 @@ func doCloneProj(id int64) {
 				return
 			} else {
 				// os.Remove maybe used, so defer cfile.Close is avoid here
+				fmt.Print(prog+file[3]+"...")
 				err := doGetFileContent(id, file[3], cfile)
 				if err != nil {
 					fmt.Println(err)
 					cfile.Close()
 					os.Remove(file[3])
+					fmt.Println("failed")
 					return
 				} else {
 					cfile.Close()
+					fmt.Println("OK")
 				}
 			}
 		}
