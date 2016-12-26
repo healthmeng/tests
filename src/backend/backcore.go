@@ -14,8 +14,8 @@ import (
 	"time"
 )
 
-var dbdrv string ="mysql"
-var dblogin string="work:abcd1234@tcp(123.206.55.31:3306)/tests"
+var dbdrv string = "mysql"
+var dblogin string = "work:abcd1234@tcp(123.206.55.31:3306)/tests"
 
 type PROJINFO struct {
 	Id       int64
@@ -48,28 +48,28 @@ func (info *PROJINFO) getRootDir() string {
 	return rootdir
 }
 
-func GetProjFile(id int64, file string)(string,int64,error){
-	proj,err:=LookforID(id)
-	if err!=nil{
-		return "",0,err
+func GetProjFile(id int64, file string) (string, int64, error) {
+	proj, err := LookforID(id)
+	if err != nil {
+		return "", 0, err
 	}
 	return proj.GetDestFile(file)
 }
 
-func (info *PROJINFO) GetDestFile(relapath string) (string,int64,error){
-//	destfile=rootprefix+relapath
-	rootdir:=info.getRootDir()
-	if finfo,err:=os.Stat(rootdir); err!=nil{
-		return "",0,err
+func (info *PROJINFO) GetDestFile(relapath string) (string, int64, error) {
+	//	destfile=rootprefix+relapath
+	rootdir := info.getRootDir()
+	if finfo, err := os.Stat(rootdir); err != nil {
+		return "", 0, err
 	} else {
-		destFile:=strings.TrimSuffix(rootdir,finfo.Name())+relapath
-		dinfo,err:=os.Stat(destFile)
-		if err!=nil{
-			return "",0,err
-		}else if dinfo.IsDir(){
-			return "",0,errors.New("Dir transfer is not supported")
-		}else {
-			return destFile,dinfo.Size(),nil
+		destFile := strings.TrimSuffix(rootdir, finfo.Name()) + relapath
+		dinfo, err := os.Stat(destFile)
+		if err != nil {
+			return "", 0, err
+		} else if dinfo.IsDir() {
+			return "", 0, errors.New("Dir transfer is not supported")
+		} else {
+			return destFile, dinfo.Size(), nil
 		}
 	}
 }
@@ -107,7 +107,7 @@ func makeOutput(rootdir string, dfiles []string) ([]string, error) {
 			if isdir {
 				result = append(result, "[dir] "+final)
 			} else {
-				result = append(result, fmt.Sprintf("      [%d,%o] %s",pinfo.Size(),pinfo.Mode(),final))
+				result = append(result, fmt.Sprintf("      [%d,%o] %s", pinfo.Size(), pinfo.Mode(), final))
 			}
 		}
 		return result, nil
@@ -133,7 +133,7 @@ func BrowseProj(id int64) ([]string, error) {
 }
 
 func LookforID(id int64) (*PROJINFO, error) {
-	db, err := sql.Open(dbdrv,dblogin) 
+	db, err := sql.Open(dbdrv, dblogin)
 	if err != nil {
 		fmt.Println("Open database failed")
 		return nil, err
@@ -145,7 +145,7 @@ func LookforID(id int64) (*PROJINFO, error) {
 	defer res.Close()
 	if res.Next() {
 		if err := res.Scan(&proj.Id, &proj.Title, &proj.Descr, &proj.Atime, &proj.Conclude, &proj.Path); err != nil {
-		//if err := res.Scan(&proj.Id, &proj.Title, &proj.Descr, &proj.Atime, &proj.Conclude, &proj.Size, &proj.Path); err != nil {
+			//if err := res.Scan(&proj.Id, &proj.Title, &proj.Descr, &proj.Atime, &proj.Conclude, &proj.Size, &proj.Path); err != nil {
 			fmt.Println("Scan error")
 			return nil, err
 		}
@@ -156,7 +156,7 @@ func LookforID(id int64) (*PROJINFO, error) {
 }
 
 func DelProj(id int64) error {
-	db, err := sql.Open(dbdrv,dblogin)
+	db, err := sql.Open(dbdrv, dblogin)
 	if err != nil {
 		fmt.Println("Open database failed")
 		return err
@@ -176,45 +176,45 @@ func DelProj(id int64) error {
 	}
 }
 
-func SearchProj(keywords []string)([]PROJINFO,error){
-	db, err := sql.Open(dbdrv,dblogin)
-    //db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
-    if err != nil {
-        fmt.Println("Open database failed")
-        return nil, err
-    }
-    defer db.Close()
+func SearchProj(keywords []string) ([]PROJINFO, error) {
+	db, err := sql.Open(dbdrv, dblogin)
+	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
+	if err != nil {
+		fmt.Println("Open database failed")
+		return nil, err
+	}
+	defer db.Close()
 
-    query:= "select * from proj where "
-	for index,arg:=range keywords{
-		if index!=0{
-			query+=" AND "
+	query := "select * from proj where "
+	for index, arg := range keywords {
+		if index != 0 {
+			query += " AND "
 		}
-		query+=fmt.Sprintf("(title like '%%%s%%' OR descr like '%%%s%%' OR projtime like '%%%s%%' OR conclude like '%%%s%%' OR path like '%%%s%%' ",arg,arg,arg,arg,arg)
-		_,err:=strconv.Atoi(arg)
-		if err==nil{
-			query+=(" OR proj_id = "+arg)
+		query += fmt.Sprintf("(title like '%%%s%%' OR descr like '%%%s%%' OR projtime like '%%%s%%' OR conclude like '%%%s%%' OR path like '%%%s%%' ", arg, arg, arg, arg, arg)
+		_, err := strconv.Atoi(arg)
+		if err == nil {
+			query += (" OR proj_id = " + arg)
 		}
 		query += ")"
 	}
-    res, _ := db.Query(query)
-    defer res.Close()
+	res, _ := db.Query(query)
+	defer res.Close()
 
-    projs := make([]PROJINFO,0,100)
-    for i := 0; res.Next(); i++ {
-		proj:=new (PROJINFO)
-        proj.IsDir = true
-        err = res.Scan(&proj.Id, &proj.Title, &proj.Descr, &proj.Atime, &proj.Conclude, &proj.Path)
-        if err != nil {
-            return nil, err
-        }
-		projs=append(projs,*proj)
-    }
-    return projs, nil
+	projs := make([]PROJINFO, 0, 100)
+	for i := 0; res.Next(); i++ {
+		proj := new(PROJINFO)
+		proj.IsDir = true
+		err = res.Scan(&proj.Id, &proj.Title, &proj.Descr, &proj.Atime, &proj.Conclude, &proj.Path)
+		if err != nil {
+			return nil, err
+		}
+		projs = append(projs, *proj)
+	}
+	return projs, nil
 }
 
 func ListProj() ([]PROJINFO, error) {
-	db, err := sql.Open(dbdrv,dblogin)
+	db, err := sql.Open(dbdrv, dblogin)
 	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
 	if err != nil {
 		fmt.Println("Open database failed")
@@ -248,7 +248,7 @@ func (info *PROJINFO) InitDir(tmpfile string) error {
 }
 
 func (info *PROJINFO) UpdateDB() error {
-	db, err := sql.Open(dbdrv,dblogin)
+	db, err := sql.Open(dbdrv, dblogin)
 	if err != nil {
 		fmt.Println("Open database failed")
 		return err
@@ -270,7 +270,7 @@ func (info *PROJINFO) UpdateDB() error {
 }
 
 func (info *PROJINFO) CreateInDB() error {
-	db, err := sql.Open(dbdrv,dblogin)
+	db, err := sql.Open(dbdrv, dblogin)
 	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")  // this will get messed code in Chinese
 	if err != nil {
 		fmt.Println("Open database failed")

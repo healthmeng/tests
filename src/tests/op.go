@@ -12,8 +12,8 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"strconv"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -362,13 +362,13 @@ func doCloneProj(id int64) {
 	os.Chdir(projpath)
 	patdir, _ := regexp.Compile("^\\[dir\\]\\s+(\\S+.*)$")
 	patfile, _ := regexp.Compile("^\\s+\\[(\\d+),(\\d+)\\]\\s+(\\S+.*)$")
-	nAll:=len(projsrc)
-	nCur:=0
+	nAll := len(projsrc)
+	nCur := 0
 	for _, line := range projsrc {
 		nCur++
-		prog:=fmt.Sprintf("(%d/%d)\t",nCur,nAll)
+		prog := fmt.Sprintf("(%d/%d)\t", nCur, nAll)
 		if dirname := patdir.FindStringSubmatch(line); dirname != nil {
-			fmt.Print(prog+dirname[1]+"...")
+			fmt.Print(prog + dirname[1] + "...")
 			os.Mkdir(dirname[1], 0755) // since parent create successfully, do not check error here
 			fmt.Println("OK")
 		} else if file := patfile.FindStringSubmatch(line); file != nil {
@@ -380,7 +380,7 @@ func doCloneProj(id int64) {
 				return
 			} else {
 				// os.Remove maybe used, so defer cfile.Close is avoid here
-				fmt.Print(prog+file[3]+"...")
+				fmt.Print(prog + file[3] + "...")
 				err := doGetFileContent(id, file[3], cfile)
 				if err != nil {
 					fmt.Println(err)
@@ -517,9 +517,9 @@ func doSearch(keywords []string) {
 		} else {
 			objinfo := obj.dumpInfo()
 			for _, kw := range keywords {
-				if strings.ToLower(runtime.GOOS)=="windows"{
+				if strings.ToLower(runtime.GOOS) == "windows" {
 					objinfo = strings.Replace(objinfo, kw, ">"+kw+"<", -1)
-				} else{
+				} else {
 					objinfo = strings.Replace(objinfo, kw, "\033[7m"+kw+"\033[0m", -1)
 				}
 			}

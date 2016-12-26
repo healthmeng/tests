@@ -42,23 +42,23 @@ func tryCreate() {
 }
 
 func searchProj() {
-	nArgs:=len(os.Args)
-	if nArgs<3{
+	nArgs := len(os.Args)
+	if nArgs < 3 {
 		prtUsage()
-	}else{
+	} else {
 		doSearch(os.Args[2:])
 	}
 }
 
 func listProj() {
-	nArgs:= len(os.Args)
+	nArgs := len(os.Args)
 	if nArgs > 3 {
 		prtUsage()
 	} else if nArgs == 3 {
 		var id int64
 		if _, err := fmt.Sscanf(os.Args[2], "%d", &id); err != nil {
 			fmt.Println("Bad parameter:", os.Args[2])
-		}else{
+		} else {
 			doBrowse(id)
 		}
 	} else {
@@ -80,15 +80,15 @@ func tryEdit() {
 }
 
 func updateSrc() {
-//	fmt.Println("update:")
-	if len(os.Args) !=5{
+	//	fmt.Println("update:")
+	if len(os.Args) != 5 {
 		prtUsage()
-	}else{
+	} else {
 		var id int64
-		if _,err:=fmt.Sscanf(os.Args[2],"%d",&id); err!=nil{
-			fmt.Println("Bad parameter:",os.Args[2])
-		}else{
-			doUpdate(id,os.Args[3],os.Args[4])
+		if _, err := fmt.Sscanf(os.Args[2], "%d", &id); err != nil {
+			fmt.Println("Bad parameter:", os.Args[2])
+		} else {
+			doUpdate(id, os.Args[3], os.Args[4])
 		}
 	}
 }
@@ -107,19 +107,19 @@ func delProj() {
 }
 
 func getProj() {
-	nArg:=len(os.Args)
-	if nArg <3 ||nArg>4{
+	nArg := len(os.Args)
+	if nArg < 3 || nArg > 4 {
 		prtUsage()
-	}else{
+	} else {
 		var id int64
-		if _,err:=fmt.Sscanf(os.Args[2],"%d",&id);err!=nil{
-			fmt.Println("Bad parameter:",os.Args[2])
+		if _, err := fmt.Sscanf(os.Args[2], "%d", &id); err != nil {
+			fmt.Println("Bad parameter:", os.Args[2])
 			return
 		}
-		if nArg==4{
-			doGetFile(id,os.Args[3])
-		}else{
-		 doCloneProj(id)
+		if nArg == 4 {
+			doGetFile(id, os.Args[3])
+		} else {
+			doCloneProj(id)
 		}
 	}
 }
