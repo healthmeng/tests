@@ -27,6 +27,10 @@ func waitOut(chok chan int,cmd *exec.Cmd){
 	chok<-0 // inform timeout cleaner
 }
 
+func GetPlugins() []string{
+	return runsrc.GetSupport()
+}
+
 func RunID(id int64,rio Redirect,params []string)(chan int ,error){
 	chout:=make(chan int,1)
 	chok:=make(chan int,1)
@@ -99,7 +103,6 @@ func (proj* PROJINFO)createContainer(args []string)(string,*exec.Cmd,error){
 		fmt.Println("Prepare running file(s) error",err)
 		return "",nil,err
 	}
-//	defer os.RemoveAll(obsPath)
 	ctrun:=""
 	ctwork:="/tmp/"
 	strcmdfile:=getProjDir(proj.Id)+"/run"

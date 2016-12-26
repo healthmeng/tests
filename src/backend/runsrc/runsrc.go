@@ -9,7 +9,7 @@ import (
 
 type SRCDETECT struct{
 	Detector string
-	CanProc func (srcname string) int 
+	CanProc func (srcname string) int
 	GetRunString func(tp int,srcname string,args ...string)(string)
 }
 
@@ -22,6 +22,15 @@ func Register(detector string, match func(string) int ,proc func(tp int ,srcname
 
 func init(){
 	handler=make([]SRCDETECT,0,50)
+}
+
+func GetSupport() []string{
+	nAll:=len(handler)
+	ret:=make([]string,nAll,nAll)
+	for i:=0;i<nAll;i++{
+		ret[i]=handler[i].Detector
+	}
+	return ret
 }
 
 func GetCmd(srcname string, args ...string)string{

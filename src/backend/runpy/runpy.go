@@ -3,6 +3,7 @@ package runpy
 import (
 "fmt"
 "os"
+"bufio"
 "strings"
 "backend/runsrc"
 )
@@ -16,8 +17,20 @@ func Judgement(srcpath string) int{
 	 strings.HasSuffix(srcpath,".PY") {
 		return 1
 	}else{
-		return 0
-	}
+        file,_:=os.Open(srcpath)
+        defer file.Close()
+        rd:=bufio.NewReader(file)
+        for i:=0;i<10;i++{
+            line,_,err:=rd.ReadLine()
+            if err!=nil{
+                break
+            }
+            if strings.HasPrefix(string(line),"#!/usr/bin/python"){
+                return 1
+            }
+        }
+    }
+	return 0
 }
 
 func RetCmd(tp int,srcpath string,args ...string)string{
