@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
+	"runtime"
 	"strings"
 )
 
@@ -507,7 +508,11 @@ func doSearch(keywords []string) {
 		} else {
 			objinfo := obj.dumpInfo()
 			for _, kw := range keywords {
-				objinfo = strings.Replace(objinfo, kw, "\033[7m"+kw+"\033[0m", -1)
+				if strings.ToLower(runtime.GOOS)=="windows"{
+					objinfo = strings.Replace(objinfo, kw, ">"+kw+"<", -1)
+				} else{
+					objinfo = strings.Replace(objinfo, kw, "\033[7m"+kw+"\033[0m", -1)
+				}
 			}
 			fmt.Println(objinfo)
 		}
