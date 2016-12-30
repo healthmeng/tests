@@ -8,7 +8,7 @@ import (
 	_ "backend/runscript"
 	"backend/runsrc"
 	"errors"
-	"fmt"
+	"log"
 	"io"
 	"os"
 	"os/exec"
@@ -35,12 +35,12 @@ func RunID(id int64, rio Redirect, params []string) (chan int, error) {
 	chok := make(chan int, 1)
 	proj, err := LookforID(id)
 	if err != nil {
-		fmt.Println("Can't find project-- id:", id)
+		log.Println("Can't find project-- id:", id)
 		return chout, err
 	}
 	cid, cmd, err := proj.createContainer(params) // create container,copy file, return container (id string), and prepare run
 	if err != nil {
-		fmt.Println("Prepare run command error:", err)
+		log.Println("Prepare run command error:", err)
 		return chout, err
 	}
 	outp, _ := cmd.StdoutPipe()
@@ -67,7 +67,7 @@ func procTimeout(cid string, chok, chout chan int) {
 	}
 	// delete cid container
 	if err := removeContainer(cid, normal); err != nil {
-		fmt.Println("Remove container error:", err)
+		log.Println("Remove container error:", err)
 	}
 	// inform server, process over
 	chout <- 1
@@ -78,7 +78,7 @@ func (proj *PROJINFO) prepareFile() (string, string, error) { // abs path & fina
 	dstPath := basePath + proj.Path
 	finfo, err := os.Stat(dstPath)
 	if err != nil {
-		fmt.Println(dstPath, "Running file(s) not found.")
+		log.Println(dstPath, "Running file(s) not found.")
 		return dstPath, "", err
 	}
 	proj.IsDir = finfo.IsDir()
@@ -98,7 +98,7 @@ func removeContainer(cid string, exited bool) error {
 func (proj *PROJINFO) createContainer(args []string) (string, *exec.Cmd, error) {
 	obsPath, fName, err := proj.prepareFile() // uncompress, stat(isdir),return obsolute path
 	if err != nil {
-		fmt.Println("Prepare running file(s) error", err)
+		log.Println("Prepare running file(s) error", err)
 		return "", nil, err
 	}
 	ctrun := ""
@@ -130,7 +130,7 @@ func (proj *PROJINFO) createContainer(args []string) (string, *exec.Cmd, error) 
 	//crcmd:=exec.Command("docker","create","-i","-t","-w",ctwork,"devel","/bin/bash","-c",ctrun) // add run command, workdir
 	outbyte, err := crcmd.Output()
 	if err != nil {
-		fmt.Println("Create container error:", err)
+		log.Println("Create container error:", err)
 		return "", nil, err
 	}
 	ctid := strings.Replace(string(outbyte), "\n", "", -1)
@@ -138,14 +138,14 @@ func (proj *PROJINFO) createContainer(args []string) (string, *exec.Cmd, error) 
 	// copy source
 	crcmd = exec.Command("docker", "cp", obsPath, ctid+":/tmp")
 	if err := crcmd.Run(); err != nil {
-		fmt.Println("docker cp src error:", err)
+		log.Println("docker cp src error:", err)
 		return "", nil, err
 	}
 	// create run command for src
 	if !proj.IsDir {
 		crcmd = exec.Command("docker", "cp", strcmdfile, ctid+":/tmp")
 		if err := crcmd.Run(); err != nil {
-			fmt.Println("docker cp cmdfile error:", err)
+			log.Println("docker cp cmdfile error:", err)
 			return "", nil, err
 		}
 	}

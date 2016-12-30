@@ -7,6 +7,7 @@ import (
 	//"os/exec"
 	"backend"
 	"bufio"
+	"log"
 	"encoding/json"
 	"io"
 	"os"
@@ -25,7 +26,7 @@ func procConn(conn net.Conn) {
 	rd := bufio.NewReader(conn)
 	command, _, err := rd.ReadLine()
 	if err != nil {
-		fmt.Println("Read command error:", err)
+		log.Println("Read command error:", err)
 		return
 	}
 	switch string(command) {
@@ -44,10 +45,10 @@ func procConn(conn net.Conn) {
 		proj := new(backend.PROJINFO)
 		//		buf:=make([]byte,4096,4096)
 		if buf, _, err := rd.ReadLine(); err != nil {
-			fmt.Println("Read create parameters error:", err)
+			log.Println("Read create parameters error:", err)
 			return
 		} else if err := json.Unmarshal(buf, proj); err != nil {
-			fmt.Println("Resolve create data error:", string(buf))
+			log.Println("Resolve create data error:", string(buf))
 			conn.Write([]byte("ERROR: " + err.Error()))
 			return
 		}
@@ -58,12 +59,12 @@ func procConn(conn net.Conn) {
 			size, recverr := io.CopyN(crfile, rd, proj.Size)
 			crfile.Close()
 			if recverr != nil || size != proj.Size {
-				fmt.Println("Receive file error")
+				log.Println("Receive file error")
 				conn.Write([]byte("ERROR Receive file error"))
 				return
 			}
 			if err := proj.CreateInDB(); err != nil {
-				fmt.Println("Create in database error:", err)
+				log.Println("Create in database error:", err)
 				conn.Write([]byte("ERROR: " + err.Error()))
 				return
 			}
@@ -71,7 +72,7 @@ func procConn(conn net.Conn) {
 				exec.Command("mkdir", "-p", projdir).Run()
 				if err:=exec.Command("tar","xzvf",tmpfile,"-C",projdir).Run();err!=nil{*/
 			if err = proj.InitDir(tmpfile); err != nil {
-				fmt.Println("Bad tgz file, can't uncompress: ", err)
+				log.Println("Bad tgz file, can't uncompress: ", err)
 				backend.DelProj(proj.Id)
 				conn.Write([]byte("ERROR: project tarball is not a valid .tgz file"))
 			} else {
@@ -80,7 +81,7 @@ func procConn(conn net.Conn) {
 				conn.Write([]byte(ret))
 			}
 		} else {
-			fmt.Println("Create file error:", err)
+			log.Println("Create file error:", err)
 			conn.Write([]byte("ERROR: " + err.Error()))
 		}
 
@@ -108,7 +109,7 @@ func procConn(conn net.Conn) {
 
 	case "Del":
 		if bufid, _, err := rd.ReadLine(); err != nil {
-			fmt.Println("Del proj:read id error--", err)
+			log.Println("Del proj:read id error--", err)
 		} else {
 			var nID int64
 			fmt.Sscanf(string(bufid), "%d", &nID)
@@ -130,13 +131,13 @@ func procConn(conn net.Conn) {
 		*/
 		bufid, _, err := rd.ReadLine()
 		if err != nil {
-			fmt.Println("Get file: read id error --", err)
+			log.Println("Get file: read id error --", err)
 			return
 		}
 		var nID int64
 		fmt.Sscanf(string(bufid), "%d", &nID)
 		if buffile, _, err := rd.ReadLine(); err != nil {
-			fmt.Println("Get file: read filename error --", err)
+			log.Println("Get file: read filename error --", err)
 		} else {
 			strs := strings.Split(string(buffile), "../")
 			path := strs[len(strs)-1] // for filesystem security
@@ -153,12 +154,12 @@ func procConn(conn net.Conn) {
 
 	case "Browse":
 		if bufid, _, err := rd.ReadLine(); err != nil {
-			fmt.Println("Browse proj: read id error--", err)
+			log.Println("Browse proj: read id error--", err)
 		} else {
 			var nID int64
 			fmt.Sscanf(string(bufid), "%d", &nID)
 			if files, err := backend.BrowseProj(nID); err != nil {
-				fmt.Println("Browse proj failed:", err)
+				log.Println("Browse proj failed:", err)
 				conn.Write([]byte("ERROR Browse proj error:" + err.Error()))
 			} else {
 				for _, line := range files {
@@ -181,7 +182,7 @@ func procConn(conn net.Conn) {
 		bufid, _, errb := rd.ReadLine()
 		pfile, _, errp := rd.ReadLine()
 		if errb != nil || errp != nil {
-			fmt.Println("Update proj: read update info error.")
+			log.Println("Update proj: read update info error.")
 			return
 		}
 		var nID int64
@@ -192,7 +193,7 @@ func procConn(conn net.Conn) {
 			conn.Write([]byte(fmt.Sprintf("%d\n", size)))
 			line, _, err := rd.ReadLine()
 			if err != nil {
-				fmt.Println("Read file size error")
+				log.Println("Read file size error")
 				return
 			}
 			sizebuf := string(line)
@@ -201,7 +202,7 @@ func procConn(conn net.Conn) {
 			}
 			var realsize int64
 			if _, err := fmt.Sscanf(sizebuf, "%d", &realsize); err != nil {
-				fmt.Println("Bad response, get file size error!")
+				log.Println("Bad response, get file size error!")
 			} else {
 				tmpname := fmt.Sprintf("/tmp/srcfile-%d", time.Now().UnixNano())
 				tmpfile, _ := os.Create(tmpname)
@@ -209,12 +210,12 @@ func procConn(conn net.Conn) {
 				tmpfile.Close()
 				defer os.Remove(tmpname) // may fail after rename, but doesn't matter if err!=nil || cpsize!=realsize {
 				if err != nil || cpsize != realsize {
-					fmt.Println("Update -- Copy file error:", err)
+					log.Println("Update -- Copy file error:", err)
 					conn.Write([]byte("ERROR copy file error"))
 				} else {
 					orginfo, _ := os.Stat(svrfile)
 					if err := os.Rename(tmpname, svrfile); err != nil {
-						fmt.Println("Write project source file error:", err)
+						log.Println("Write project source file error:", err)
 						conn.Write([]byte("ERROR write source file error"))
 					} else {
 						os.Chmod(svrfile, orginfo.Mode())
@@ -237,7 +238,7 @@ func procConn(conn net.Conn) {
 		*/
 
 		if bufid, _, err := rd.ReadLine(); err != nil {
-			fmt.Println("Edit proj:read id error", err)
+			log.Println("Edit proj:read id error", err)
 		} else {
 			var nID int64
 			fmt.Sscanf(string(bufid), "%d", &nID)
@@ -250,12 +251,12 @@ func procConn(conn net.Conn) {
 				conn.Write([]byte(ret))
 				buf, _, err := rd.ReadLine()
 				if err != nil {
-					fmt.Println("Get edit response error:", err)
+					log.Println("Get edit response error:", err)
 					return
 				}
 				if string(buf) != "CANCEL" {
 					if err := json.Unmarshal(buf, proj); err != nil {
-						fmt.Println("Resolve create data error:", string(buf))
+						log.Println("Resolve create data error:", string(buf))
 						conn.Write([]byte("ERROR " + err.Error()))
 					} else {
 						if err = proj.UpdateDB(); err != nil {
@@ -270,14 +271,14 @@ func procConn(conn net.Conn) {
 
 	case "Search":
 		if bufargs, _, err := rd.ReadLine(); err != nil {
-			fmt.Println("Search: read arg numbers error:", err)
+			log.Println("Search: read arg numbers error:", err)
 		} else {
 			nArgs := 0
 			fmt.Sscanf(string(bufargs), "%d", &nArgs)
 			keywords := make([]string, 0, 20)
 			for i := 0; i < nArgs; i++ {
 				if line, _, err := rd.ReadLine(); err != nil {
-					fmt.Println("Read args error:", err)
+					log.Println("Read args error:", err)
 					return
 				} else {
 					keywords = append(keywords, string(line))
@@ -301,7 +302,7 @@ func procConn(conn net.Conn) {
 	case "Run":
 		//bufid:=make([]byte,10,10)
 		if bufid, _, err := rd.ReadLine(); err != nil {
-			fmt.Println("Run proj:read id error", err)
+			log.Println("Run proj:read id error", err)
 			//			conn.Write([]byte("ERROR "+err.Error())) // need not,since read error already
 		} else {
 			var nID int64
@@ -311,7 +312,7 @@ func procConn(conn net.Conn) {
 			for i := 0; i < nParam; i++ {
 				param, _, err := rd.ReadLine()
 				if err != nil {
-					fmt.Println("Get parameters failed.")
+					log.Println("Get parameters failed.")
 					conn.Write([]byte("ERROR Parameters error"))
 					return
 				}
@@ -320,7 +321,7 @@ func procConn(conn net.Conn) {
 			rio := &RemoteIO{rdr: rd, wtr: conn}
 			chout, err := backend.RunID(nID, rio, params) // cmd.Start,concurrent input and output
 			if err != nil {
-				fmt.Println("Run command error:", err)
+				log.Println("Run command error:", err)
 				conn.Write([]byte("ERROR " + err.Error()))
 			} else {
 				<-chout
@@ -328,7 +329,7 @@ func procConn(conn net.Conn) {
 		}
 
 	default:
-		fmt.Println("Unknown command:", string(command))
+		log.Println("Unknown command:", string(command))
 	}
 }
 
@@ -372,7 +373,7 @@ func main() {
 	for {
 		conn, err := lisn.Accept()
 		if err != nil {
-			fmt.Println("Server accept error:", err)
+			log.Println("Server accept error:", err)
 			return
 		}
 		go procConn(conn)

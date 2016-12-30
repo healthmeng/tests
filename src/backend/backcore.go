@@ -4,6 +4,7 @@ package backend
 
 import (
 	"database/sql"
+	"log"
 	"errors"
 	"fmt"
 	_ "github.com/Go-SQL-Driver/MySQL"
@@ -79,7 +80,7 @@ func (info *PROJINFO) diskFiles() (string, []string, error) {
 
 	output, err := exec.Command("find", rootdir).Output()
 	if err != nil {
-		fmt.Println("browse root dir error:", err)
+		log.Println("browse root dir error:", err)
 		return rootdir, nil, err
 	}
 	lines := strings.Split(string(output), "\n")
@@ -88,7 +89,7 @@ func (info *PROJINFO) diskFiles() (string, []string, error) {
 
 func makeOutput(rootdir string, dfiles []string) ([]string, error) {
 	if finfo, err := os.Stat(rootdir); err != nil {
-		fmt.Println(rootdir, " not exist")
+		log.Println(rootdir, " not exist")
 		return nil, err
 	} else {
 		dirname := finfo.Name()
@@ -117,11 +118,11 @@ func makeOutput(rootdir string, dfiles []string) ([]string, error) {
 func BrowseProj(id int64) ([]string, error) {
 	proj, err := LookforID(id)
 	if err != nil {
-		fmt.Println("Lookfor proj failed:", err)
+		log.Println("Lookfor proj failed:", err)
 		return nil, err
 	}
 	if rootdir, dfiles, err := proj.diskFiles(); err != nil {
-		fmt.Println("Check disk file error:", err)
+		log.Println("Check disk file error:", err)
 		return nil, err
 	} else {
 		if output, err := makeOutput(rootdir, dfiles); err != nil {
@@ -135,7 +136,7 @@ func BrowseProj(id int64) ([]string, error) {
 func LookforID(id int64) (*PROJINFO, error) {
 	db, err := sql.Open(dbdrv, dblogin)
 	if err != nil {
-		fmt.Println("Open database failed")
+		log.Println("Open database failed")
 		return nil, err
 	}
 	defer db.Close()
@@ -146,7 +147,7 @@ func LookforID(id int64) (*PROJINFO, error) {
 	if res.Next() {
 		if err := res.Scan(&proj.Id, &proj.Title, &proj.Descr, &proj.Atime, &proj.Conclude, &proj.Path); err != nil {
 			//if err := res.Scan(&proj.Id, &proj.Title, &proj.Descr, &proj.Atime, &proj.Conclude, &proj.Size, &proj.Path); err != nil {
-			fmt.Println("Scan error")
+			log.Println("Scan error")
 			return nil, err
 		}
 	} else {
@@ -158,13 +159,13 @@ func LookforID(id int64) (*PROJINFO, error) {
 func DelProj(id int64) error {
 	db, err := sql.Open(dbdrv, dblogin)
 	if err != nil {
-		fmt.Println("Open database failed")
+		log.Println("Open database failed")
 		return err
 	}
 	defer db.Close()
 	delcmd := fmt.Sprintf("delete from proj where proj_id=%d", id)
 	if result, err := db.Exec(delcmd); err != nil {
-		fmt.Println("Exec delete cmd in db error:", err)
+		log.Println("Exec delete cmd in db error:", err)
 		return err
 	} else {
 		if rows, _ := result.RowsAffected(); rows > 0 {
@@ -180,7 +181,7 @@ func SearchProj(keywords []string) ([]PROJINFO, error) {
 	db, err := sql.Open(dbdrv, dblogin)
 	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
 	if err != nil {
-		fmt.Println("Open database failed")
+		log.Println("Open database failed")
 		return nil, err
 	}
 	defer db.Close()
@@ -217,14 +218,14 @@ func ListProj() ([]PROJINFO, error) {
 	db, err := sql.Open(dbdrv, dblogin)
 	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
 	if err != nil {
-		fmt.Println("Open database failed")
+		log.Println("Open database failed")
 		return nil, err
 	}
 	defer db.Close()
 	query := "select count(*) as value from proj"
 	var rows int64
 	if err := db.QueryRow(query).Scan(&rows); err != nil {
-		fmt.Println("Query rows error")
+		log.Println("Query rows error")
 		return nil, err
 	}
 	query = "select * from proj"
@@ -250,7 +251,7 @@ func (info *PROJINFO) InitDir(tmpfile string) error {
 func (info *PROJINFO) UpdateDB() error {
 	db, err := sql.Open(dbdrv, dblogin)
 	if err != nil {
-		fmt.Println("Open database failed")
+		log.Println("Open database failed")
 		return err
 	}
 	defer db.Close()
@@ -258,7 +259,7 @@ func (info *PROJINFO) UpdateDB() error {
 	info.Atime = fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d", tm.Year(), tm.Month(), tm.Day(), tm.Hour(), tm.Minute(), tm.Second())
 	updatecmd := fmt.Sprintf("update proj set title='%s',descr='%s',conclude='%s',projtime='%s' where proj_id=%d", info.Title, info.Descr, info.Conclude, info.Atime, info.Id)
 	if result, err := db.Exec(updatecmd); err != nil {
-		fmt.Println("Exec update cmd in db error:", err)
+		log.Println("Exec update cmd in db error:", err)
 		return err
 	} else {
 		if rows, _ := result.RowsAffected(); rows > 0 {
@@ -273,7 +274,7 @@ func (info *PROJINFO) CreateInDB() error {
 	db, err := sql.Open(dbdrv, dblogin)
 	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")  // this will get messed code in Chinese
 	if err != nil {
-		fmt.Println("Open database failed")
+		log.Println("Open database failed")
 		return err
 	}
 	defer db.Close()
@@ -285,7 +286,7 @@ func (info *PROJINFO) CreateInDB() error {
 		info.Id, _ = result.LastInsertId()
 		return nil
 	} else {
-		fmt.Println("insert failed")
+		log.Println("insert failed")
 		return err
 	}
 }
