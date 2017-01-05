@@ -16,7 +16,8 @@ import (
 )
 
 var dbdrv string = "mysql"
-var dblogin string = "work:abcd1234@tcp(123.206.55.31:3306)/tests"
+var dblogin string = "work:abcd1234@tcp(localhost:3306)/tests"
+//var dblogin string = "work:abcd1234@tcp(123.206.55.31:3306)/tests"
 
 type PROJINFO struct {
 	Id       int64
