@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -214,7 +215,8 @@ func procConn(conn net.Conn) {
 					conn.Write([]byte("ERROR copy file error"))
 				} else {
 					orginfo, _ := os.Stat(svrfile)
-					if err := os.Rename(tmpname, svrfile); err != nil {
+					//if err := os.Rename(tmpname, svrfile); err != nil {
+					if err := exec.Command("/usr/bin/mv","-f",tmpname,svrfile).Run(); err != nil {
 						log.Println("Write project source file error:", err)
 						conn.Write([]byte("ERROR write source file error"))
 					} else {
