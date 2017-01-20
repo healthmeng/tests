@@ -15,9 +15,9 @@ import (
 	"time"
 )
 
-var dbdrv string = "mysql"
-var dblogin string = "work:abcd1234@tcp(localhost:3306)/tests"
+//var dblogin string = "work:abcd1234@tcp(localhost:3306)/tests"
 //var dblogin string = "work:abcd1234@tcp(123.206.55.31:3306)/tests"
+var hdb *sql.DB =nil
 
 type PROJINFO struct {
 	Id       int64
@@ -28,6 +28,20 @@ type PROJINFO struct {
 	Path     string
 	IsDir    bool
 	Size     int64
+}
+
+func getDB()(*sql.DB, error){
+	dbdrv := "mysql"
+	dblogin := "work:abcd1234@tcp(localhost:3306)/tests"
+	var err error=nil
+	if hdb==nil{
+		hdb, err = sql.Open(dbdrv, dblogin)
+		if err != nil {
+			log.Println("Open database failed")
+			hdb=nil
+		}
+	}
+	return hdb,err
 }
 
 func getProjDir(id int64) string {
@@ -135,12 +149,10 @@ func BrowseProj(id int64) ([]string, error) {
 }
 
 func LookforID(id int64) (*PROJINFO, error) {
-	db, err := sql.Open(dbdrv, dblogin)
+	db, err :=getDB()
 	if err != nil {
-		log.Println("Open database failed")
 		return nil, err
 	}
-	defer db.Close()
 	query := fmt.Sprintf("select * from proj where proj_id=%d", id)
 	proj := new(PROJINFO)
 	res, _ := db.Query(query)
@@ -158,12 +170,10 @@ func LookforID(id int64) (*PROJINFO, error) {
 }
 
 func DelProj(id int64) error {
-	db, err := sql.Open(dbdrv, dblogin)
+	db, err :=getDB()
 	if err != nil {
-		log.Println("Open database failed")
 		return err
 	}
-	defer db.Close()
 	delcmd := fmt.Sprintf("delete from proj where proj_id=%d", id)
 	if result, err := db.Exec(delcmd); err != nil {
 		log.Println("Exec delete cmd in db error:", err)
@@ -179,13 +189,11 @@ func DelProj(id int64) error {
 }
 
 func SearchProj(keywords []string) ([]PROJINFO, error) {
-	db, err := sql.Open(dbdrv, dblogin)
+	db, err :=getDB()
 	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
 	if err != nil {
-		log.Println("Open database failed")
 		return nil, err
 	}
-	defer db.Close()
 
 	query := "select * from proj where "
 	for index, arg := range keywords {
@@ -216,13 +224,10 @@ func SearchProj(keywords []string) ([]PROJINFO, error) {
 }
 
 func ListProj() ([]PROJINFO, error) {
-	db, err := sql.Open(dbdrv, dblogin)
-	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
+	db, err :=getDB()
 	if err != nil {
-		log.Println("Open database failed")
 		return nil, err
 	}
-	defer db.Close()
 	query := "select count(*) as value from proj"
 	var rows int64
 	if err := db.QueryRow(query).Scan(&rows); err != nil {
@@ -250,15 +255,15 @@ func (info *PROJINFO) InitDir(tmpfile string) error {
 }
 
 func (info *PROJINFO) UpdateDB() error {
-	db, err := sql.Open(dbdrv, dblogin)
+	db, err :=getDB()
 	if err != nil {
-		log.Println("Open database failed")
 		return err
 	}
-	defer db.Close()
 	tm := time.Now().Local()
 	info.Atime = fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d", tm.Year(), tm.Month(), tm.Day(), tm.Hour(), tm.Minute(), tm.Second())
 	updatecmd := fmt.Sprintf("update proj set title='%s',descr='%s',conclude='%s',projtime='%s' where proj_id=%d", info.Title, info.Descr, info.Conclude, info.Atime, info.Id)
+
+	updatecmd=strings.Replace(updatecmd,"\\","\\\\",-1)
 	if result, err := db.Exec(updatecmd); err != nil {
 		log.Println("Exec update cmd in db error:", err)
 		return err
@@ -272,17 +277,16 @@ func (info *PROJINFO) UpdateDB() error {
 }
 
 func (info *PROJINFO) CreateInDB() error {
-	db, err := sql.Open(dbdrv, dblogin)
+	db, err := getDB()
 	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")  // this will get messed code in Chinese
 	if err != nil {
-		log.Println("Open database failed")
 		return err
 	}
-	defer db.Close()
 	tm := time.Now().Local()
 	info.Atime = fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d", tm.Year(), tm.Month(), tm.Day(), tm.Hour(), tm.Minute(), tm.Second())
 	//	st,err:=db.Prepare("insert proj set title=?,descr=?,projtime=?,conclude=?,
 	query := fmt.Sprintf("insert into proj (title,descr,projtime,conclude,path) values ('%s','%s','%s','%s','%s')", info.Title, info.Descr, info.Atime, info.Conclude, info.Path)
+	query=strings.Replace(query,"\\","\\\\",-1)
 	if result, err := db.Exec(query); err == nil {
 		info.Id, _ = result.LastInsertId()
 		return nil
