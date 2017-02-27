@@ -25,7 +25,7 @@ func prtUsage() {
 func tryCreate() {
 	fmt.Println("create:")
 	count := len(os.Args)
-	if count > 3 {
+	if count !=3{
 		prtUsage()
 	} else {
 		path := os.Args[2]
