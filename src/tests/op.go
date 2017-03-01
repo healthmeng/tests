@@ -444,7 +444,7 @@ func ListPlugins() {
 		return
 	} else {
 		if nPlugin, _ := strconv.Atoi(string(line)); nPlugin != 0 {
-			fmt.Println("The source code of following language may be run directly:")
+			fmt.Println("The source code of following language(s) may be run directly:")
 			for i := 0; i < nPlugin; i++ {
 				if line, _, err := rd.ReadLine(); err == nil {
 					fmt.Print(string(line) + "  ")
