@@ -474,7 +474,7 @@ func ParseInput(conn net.Conn) {
 	}
 }
 
-func doSearch(keywords []string) {
+func doSearch(keywords []string, cs bool) {
 	conn, err := net.Dial("tcp", rsvr+rport)
 	if err != nil {
 		fmt.Println("connect to server error")
@@ -492,7 +492,11 @@ func doSearch(keywords []string) {
 	   <- nProjs
 	   <- Result
 	*/
-	conn.Write([]byte(fmt.Sprintf("Search\n%d\n", len(keywords))))
+	if cs{
+		conn.Write([]byte(fmt.Sprintf("SearchCS\n%d\n", len(keywords))))
+	}else{
+		conn.Write([]byte(fmt.Sprintf("Search\n%d\n", len(keywords))))
+	}
 	for _, arg := range keywords {
 		conn.Write([]byte(arg + "\n"))
 	}

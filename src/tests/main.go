@@ -18,7 +18,8 @@ func prtUsage() {
 	fmt.Println("\tget, -g proj_id | -l proj_id srcfile(including relative directory)\n\t\tDownload the whole project to current directory OR a source file of project to stdout.\n")
 	fmt.Println("\tlist, -l | -l id\n\t\tList all test projects and their infomations(IDs may be most useful) OR list project directory of certain id.\n")
 	fmt.Println("\trun, -r proj_id [arg1 arg2 arg3...]\n\t\tRun a proj, get commandline result. The args are only valid when project is a single source file.\n")
-	fmt.Println("\tsearch, -s keyword1[ keyword2 keyword3...]\n\t\tSearch a project by keywords.\n")
+	fmt.Println("\tsearch, -s keyword1[ keyword2 keyword3...]\n\t\tSearch a project by keywords case insensitive.\n")
+	fmt.Println("\tSearch, -S keyword1[ keyword2 keyword3...]\n\t\tSearch a project by keywords case sensitive.\n")
 	fmt.Println("\tupdate, -u proj_id proj_file(including relative directory) localfile\n\t\tUpdate a source file of an existed project.\n")
 }
 
@@ -46,7 +47,16 @@ func searchProj() {
 	if nArgs < 3 {
 		prtUsage()
 	} else {
-		doSearch(os.Args[2:])
+		doSearch(os.Args[2:],false)
+	}
+}
+
+func searchCSProj() {
+	nArgs := len(os.Args)
+	if nArgs < 3 {
+		prtUsage()
+	} else {
+		doSearch(os.Args[2:],true)
 	}
 }
 
@@ -177,6 +187,11 @@ func main() {
 			fallthrough
 		case "-s":
 			searchProj()
+
+		case "Search":
+			fallthrough
+		case "-S":
+			searchCSProj()
 
 		case "run":
 			fallthrough

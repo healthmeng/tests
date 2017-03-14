@@ -30,6 +30,7 @@ func procConn(conn net.Conn) {
 		log.Println("Read command error:", err)
 		return
 	}
+	searchCS:=false
 	switch string(command) {
 	case "Create":
 		/*
@@ -270,7 +271,9 @@ func procConn(conn net.Conn) {
 				} // else remote finish connection
 			}
 		}
-
+	case "SearchCS":
+		searchCS=true
+		fallthrough
 	case "Search":
 		if bufargs, _, err := rd.ReadLine(); err != nil {
 			log.Println("Search: read arg numbers error:", err)
@@ -287,7 +290,7 @@ func procConn(conn net.Conn) {
 				}
 			}
 
-			projs, err := backend.SearchProj(keywords)
+			projs, err := backend.SearchProj(keywords,searchCS)
 			if err != nil {
 				conn.Write([]byte("ERROR " + err.Error()))
 				return

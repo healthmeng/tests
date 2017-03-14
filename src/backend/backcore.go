@@ -188,7 +188,7 @@ func DelProj(id int64) error {
 	}
 }
 
-func SearchProj(keywords []string) ([]PROJINFO, error) {
+func SearchProj(keywords []string, cs bool) ([]PROJINFO, error) {
 	db, err :=getDB()
 	//db,err:=sql.Open("mysql","work:abcd1234@tcp(123.206.55.31:3306)/tests?charset=utf8")
 	if err != nil {
@@ -206,6 +206,9 @@ func SearchProj(keywords []string) ([]PROJINFO, error) {
 			query += (" OR proj_id = " + arg)
 		}
 		query += ")"
+	}
+	if cs{
+		query+=" collate utf8_bin"
 	}
 	res, _ := db.Query(query)
 	defer res.Close()
