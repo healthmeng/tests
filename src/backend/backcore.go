@@ -200,15 +200,16 @@ func SearchProj(keywords []string, cs bool) ([]PROJINFO, error) {
 		if index != 0 {
 			query += " AND "
 		}
-		query += fmt.Sprintf("(title like '%%%s%%' OR descr like '%%%s%%' OR projtime like '%%%s%%' OR conclude like '%%%s%%' OR path like '%%%s%%' ", arg, arg, arg, arg, arg)
+		if cs{
+			query += fmt.Sprintf("(title  collate utf8_bin like '%%%s%%' OR descr  collate utf8_bin like '%%%s%%' OR projtime like '%%%s%%' OR conclude  collate utf8_bin like '%%%s%%' OR path collate utf8_bin like '%%%s%%' ", arg, arg, arg, arg, arg)
+		}else{
+			query += fmt.Sprintf("(title like '%%%s%%' OR descr like '%%%s%%' OR projtime like '%%%s%%' OR conclude like '%%%s%%' OR path like '%%%s%%' ", arg, arg, arg, arg, arg)
+		}
 		_, err := strconv.Atoi(arg)
 		if err == nil {
 			query += (" OR proj_id = " + arg)
 		}
 		query += ")"
-	}
-	if cs{
-		query+=" collate utf8_bin"
 	}
 	res, _ := db.Query(query)
 	defer res.Close()
