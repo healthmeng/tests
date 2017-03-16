@@ -7,7 +7,7 @@ import (
 	"log"
 	"errors"
 	"fmt"
-	_ "github.com/Go-SQL-Driver/MySQL"
+	_"github.com/Go-SQL-Driver/MySQL"
 	"os"
 	"os/exec"
 	"strconv"
@@ -18,6 +18,7 @@ import (
 //var dblogin string = "work:abcd1234@tcp(localhost:3306)/tests"
 //var dblogin string = "work:abcd1234@tcp(123.206.55.31:3306)/tests"
 var hdb *sql.DB =nil
+var dblogin string ="work:abcd1234@tcp(localhost:3306)/tests"
 
 type PROJINFO struct {
 	Id       int64
@@ -30,9 +31,13 @@ type PROJINFO struct {
 	Size     int64
 }
 
+func ChangeDefDB(host, user, passwd string){
+	dblogin=fmt.Sprintf("%s:%s@tcp(%s:3306)/tests",user,passwd,host)
+}
+
 func getDB()(*sql.DB, error){
 	dbdrv := "mysql"
-	dblogin := "work:abcd1234@tcp(localhost:3306)/tests"
+//	dblogin := "work:abcd1234@tcp(localhost:3306)/tests"
 	var err error=nil
 	if hdb==nil{
 		hdb, err = sql.Open(dbdrv, dblogin)

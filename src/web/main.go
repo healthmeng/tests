@@ -5,6 +5,7 @@ import(
 _"html/template"
 "io"
 "net/http"
+"os"
 "log"
 "fmt"
 "backend"
@@ -37,7 +38,20 @@ func listproj(w http.ResponseWriter, r *http.Request){
 	}
 }
 
+func InitDB(){
+	config,err:=os.Open("db.ini")
+	if err==nil{
+		defer config.Close()
+		var host,user,passwd string
+		fmt.Fscanf(config,"%s%s%s",&host,&user,&passwd)
+		if host!="" && user !="" && passwd!=""{
+			backend.ChangeDefDB(host,user,passwd)
+		}
+	}
+}
+
 func main(){
+	InitDB()
 	http.HandleFunc("/",listproj)
 	http.HandleFunc("/list",listproj)
 	if err:=http.ListenAndServe(":7777",nil);err!=nil{
