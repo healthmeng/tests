@@ -2,10 +2,6 @@
 package backend
 
 import (
-	_ "backend/runcncpp"
-	_ "backend/rungo"
-	_ "backend/runpy"
-	_ "backend/runscript"
 	"backend/runsrc"
 	"errors"
 	"log"

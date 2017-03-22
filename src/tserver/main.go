@@ -4,7 +4,6 @@ package main
 import (
 	"fmt"
 	"net"
-	//"os/exec"
 	"backend"
 	"bufio"
 	"log"
@@ -15,6 +14,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	_ "backend/runcncpp"
+	_ "backend/rungo"
+	_ "backend/runpy"
+	_ "backend/runscript"
+
 )
 
 type RemoteIO struct {
