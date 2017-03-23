@@ -11,6 +11,8 @@ _"html/template"
 "backend"
 )
 
+var dhandle http.Handler
+
 func ListProjs(w io.Writer){
 	fmt.Fprintf(w,"<!DOCTYPE html>\n<head>\n<title> Project list </title>\n<meta charset=\"utf-8\" />\n<body>\n<table id=\"projtbl\" border=\"1\">\n")
 	fmt.Fprintf(w,"<form name=\"lists\" method=\"post\" action=\"detail\">\n")
@@ -39,7 +41,9 @@ func listproj(w http.ResponseWriter, r *http.Request){
 	}else{
 		r.ParseForm()
 		obj:=r.Form["sel"][0]
-		fmt.Fprintf(w,"selected : %s\n",obj)
+		dhandle.ServeHTTP(w,r)
+	//	fmt.Fprintf(w,"selected : %s\n",obj)
+		http.Redirect(w,r,fmt.Sprintf("/projs/%s",obj),http.StatusFound)
 	}
 }
 
@@ -59,6 +63,7 @@ func main(){
 	InitDB()
 	http.HandleFunc("/",listproj)
 	http.HandleFunc("/list",listproj)
+	dhandle=http.StripPrefix("/projs",http.FileServer(http.Dir("/opt/testssvr")))
 //	http.HandleFunc("/detail",showdetail)
 	if err:=http.ListenAndServe(":7777",nil);err!=nil{
 		log.Println("Error:",err)
