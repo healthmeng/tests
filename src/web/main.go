@@ -41,7 +41,7 @@ func listproj(w http.ResponseWriter, r *http.Request){
 	}else{
 		r.ParseForm()
 		obj:=r.Form["sel"][0]
-		dhandle.ServeHTTP(w,r)
+//		dhandle.ServeHTTP(w,r)
 	//	fmt.Fprintf(w,"selected : %s\n",obj)
 		http.Redirect(w,r,fmt.Sprintf("/projs/%s",obj),http.StatusFound)
 	}
@@ -63,7 +63,9 @@ func main(){
 	InitDB()
 	http.HandleFunc("/",listproj)
 	http.HandleFunc("/list",listproj)
-	dhandle=http.StripPrefix("/projs",http.FileServer(http.Dir("/opt/testssvr")))
+	dhandle=http.FileServer(http.Dir("/opt/testssvr"))
+	//dhandle=http.StripPrefix("/projs",http.FileServer(http.Dir("/opt/testssvr")))
+	http.Handle("/projs/",dhandle)
 //	http.HandleFunc("/detail",showdetail)
 	if err:=http.ListenAndServe(":7777",nil);err!=nil{
 		log.Println("Error:",err)
