@@ -14,7 +14,7 @@ import (
 
 type Redirect interface {
 	GetInput(inpipe io.WriteCloser)   // get remote input
-	SendOutput(outpipe io.ReadCloser) // get local output
+	SendOutput(outpipe,errpipe io.ReadCloser) // get local output
 }
 
 func waitOut(chok chan int, cmd *exec.Cmd) {
@@ -40,8 +40,9 @@ func RunID(id int64, rio Redirect, params []string) (chan int, error) {
 		return chout, err
 	}
 	outp, _ := cmd.StdoutPipe()
+	errp, _ := cmd.StderrPipe()
 	inp, _ := cmd.StdinPipe()
-	go rio.SendOutput(outp)
+	go rio.SendOutput(outp,errp)
 	go rio.GetInput(inp)
 	if err := cmd.Start(); err != nil {
 		return chout, err

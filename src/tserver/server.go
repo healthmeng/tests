@@ -342,22 +342,55 @@ func procConn(conn net.Conn) {
 	}
 }
 
-func (r *RemoteIO) SendOutput(outp io.ReadCloser) {
+func getOut(chbuf chan []byte, outp io.ReadCloser){
+	buf:=make([]byte, 4096,4096)
+	for{
+		n,err:=outp.Read(buf)
+		if err!=nil{
+			chbuf<-make([]byte,0,0)
+			break
+		}else{
+			chbuf<-buf[:n]
+		}
+	}
+}
+
+//func getErr(chbuf, chan []byte
+
+func (r *RemoteIO) SendOutput(outp ,errp io.ReadCloser) {
 	defer outp.Close()
-	buf := make([]byte, 1024, 4096)
+	defer errp.Close()
+//	buf := make([]byte, 1024, 4096)
+	chbuf:=make(chan []byte)
+	go getOut(chbuf,outp)
+	go getOut(chbuf,errp)
 	for {
-		n, err := outp.Read(buf)
+/*		var(
+			n int
+			err error
+		)
+		select{
+			case n, err = outp.Read(buf):
+			case n, err =errp.Read(buf):
+			
+		}
 		if err != nil {
 			//fmt.Println("Read pipe over:",err)
 			break
 		} else {
-			if _, err := r.wtr.Write(buf[:n]); err != nil {
-				//	fmt.Println("Send output to client failed:",err)
-				break
-			}
+*/
+		buf:= <-chbuf
+		if len(buf)==0 && cap(buf)==0{
+			break
 		}
+		if _, err := r.wtr.Write(buf); err != nil {
+			//	fmt.Println("Send output to client failed:",err)
+			break
+		}
+///		}
 	}
 }
+
 
 func (r *RemoteIO) GetInput(inp io.WriteCloser) {
 	defer inp.Close()
