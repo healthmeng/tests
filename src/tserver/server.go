@@ -28,6 +28,7 @@ type RemoteIO struct {
 
 func procConn(conn net.Conn) {
 	defer conn.Close()
+    conn.SetReadDeadline(time.Now().Add(time.Second*300))
 	rd := bufio.NewReader(conn)
 	command, _, err := rd.ReadLine()
 	if err != nil {
