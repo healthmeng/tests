@@ -105,6 +105,9 @@ func (proj *PROJINFO) createContainer(args []string) (string, *exec.Cmd, error) 
 		if finfo, err := os.Stat(obsPath + "/run"); err == nil { // host path
 			if !finfo.IsDir() && (finfo.Mode()&0700 != 0) {
 				ctrun = "/tmp/" + fName + "/run" // guest path
+				for _,strarg:=range args{
+					ctrun+=" "+strarg
+				}
 				ctwork += fName
 			}
 		} else {

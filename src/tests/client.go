@@ -8,18 +8,18 @@ import (
 )
 
 func prtUsage() {
-	fmt.Println("\n\ttests is a tool to collect your test codes and makes it easy for later review.\n")
+	fmt.Println("\n\ttests is a tool to collect your testing codes and make it easy for later review.\n")
 	fmt.Println("Usage:")
 	fmt.Println("\ttests command [args]\n")
 	fmt.Println("Commands include:")
 	fmt.Println("\tcreate, -c dir|file\n\t\tCreate(upload) a test project.\n")
 	fmt.Println("\tdel, -d proj_id\n\t\tDelete a project.\n")
 	fmt.Println("\tedit, -e proj_id:\n\t\tEdit an existing remote project's info.\n")
-	fmt.Println("\tget, -g proj_id | -l proj_id srcfile(including relative directory)\n\t\tDownload the whole project to current directory OR a source file of project to stdout.\n")
-	fmt.Println("\tlist, -l | -l id\n\t\tList all test projects and their infomations(IDs may be most useful) OR list project directory of certain id.\n")
-	fmt.Println("\trun, -r proj_id [arg1 arg2 arg3...]\n\t\tRun a proj, get commandline result. The args are only valid when project is a single source file.\n")
-	fmt.Println("\tsearch, -s keyword1[ keyword2 keyword3...]\n\t\tSearch a project by keywords case insensitive.\n")
-	fmt.Println("\tSearch, -S keyword1[ keyword2 keyword3...]\n\t\tSearch a project by keywords case sensitive.\n")
+	fmt.Println("\tget, -g proj_id | -l proj_id srcfile(including relative directory)\n\t\tDownload the whole project to current directory OR dump a single source file in a project to stdout.\n")
+	fmt.Println("\tlist, -l | -l id\n\t\tList all test projects and their infomations(IDs may be most useful) OR list project directory structures of a certain project by id.\n")
+	fmt.Println("\trun, -r proj_id [arg1 arg2 arg3...]\n\t\tRun a proj, get commandline result. The args are valid only when project contains a single source file.\n")
+	fmt.Println("\tsearch, -s keyword1[ keyword2 keyword3...]\n\t\tSearch a project by case-insensitive keywords.\n")
+	fmt.Println("\tSearch, -S keyword1[ keyword2 keyword3...]\n\t\tSearch a project by case-sensitive keywords.\n")
 	fmt.Println("\tupdate, -u proj_id proj_file(including relative directory) localfile\n\t\tUpdate a source file of an existed project.\n")
 }
 
