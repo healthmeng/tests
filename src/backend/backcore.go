@@ -16,7 +16,7 @@ import (
 )
 
 //var dblogin string = "work:abcd1234@tcp(localhost:3306)/tests"
-//var dblogin string = "work:abcd1234@tcp(123.206.55.31:3306)/tests"
+//var dblogin string = "work:Work4All;@tcp(123.206.55.31:3306)/tests"
 var hdb *sql.DB =nil
 var dblogin string ="work:abcd1234@tcp(localhost:3306)/tests"
 
@@ -29,6 +29,11 @@ type PROJINFO struct {
 	Path     string
 	IsDir    bool
 	Size     int64
+}
+
+func (info *PROJINFO) dumpInfo() string {
+        return fmt.Sprintf("ProjectID = [%d]\nTitle = [%s]\nModified = [%s]\nDescription = [%s]\nConclusion = [%s]\nPath = [%s]\n",
+                info.Id, info.Title, info.Atime, info.Descr, info.Conclude, info.Path)
 }
 
 func ChangeDefDB(host, user, passwd string){
@@ -135,20 +140,21 @@ func makeOutput(rootdir string, dfiles []string) ([]string, error) {
 	}
 }
 
-func BrowseProj(id int64) ([]string, error) {
+func BrowseProj(id int64) (string,[]string, error) {
 	proj, err := LookforID(id)
+	output:=proj.dumpInfo()
 	if err != nil {
 		log.Println("Lookfor proj failed:", err)
-		return nil, err
+		return "",nil, err
 	}
 	if rootdir, dfiles, err := proj.diskFiles(); err != nil {
 		log.Println("Check disk file error:", err)
-		return nil, err
+		return "",nil, err
 	} else {
-		if output, err := makeOutput(rootdir, dfiles); err != nil {
-			return nil, err
+		if srcfiles, err:= makeOutput(rootdir, dfiles); err != nil {
+			return "",nil, err
 		} else {
-			return output, nil
+			return output,srcfiles, nil
 		}
 	}
 }

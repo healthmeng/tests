@@ -165,10 +165,11 @@ func procConn(conn net.Conn) {
 		} else {
 			var nID int64
 			fmt.Sscanf(string(bufid), "%d", &nID)
-			if files, err := backend.BrowseProj(nID); err != nil {
+			if desc, files, err := backend.BrowseProj(nID); err != nil {
 				log.Println("Browse proj failed:", err)
 				conn.Write([]byte("ERROR Browse proj error:" + err.Error()))
 			} else {
+				conn.Write([]byte(desc))
 				for _, line := range files {
 					conn.Write([]byte(line + "\n"))
 				}
