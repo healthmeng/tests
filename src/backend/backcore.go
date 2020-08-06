@@ -142,7 +142,7 @@ func makeOutput(rootdir string, dfiles []string) ([]string, error) {
 
 func BrowseProj(id int64) (string,[]string, error) {
 	proj, err := LookforID(id)
-	output:=proj.dumpInfo()
+	output:=proj.dumpInfo()+"Source info:\n"
 	if err != nil {
 		log.Println("Lookfor proj failed:", err)
 		return "",nil, err

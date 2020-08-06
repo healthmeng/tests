@@ -16,7 +16,7 @@ func prtUsage() {
 	fmt.Println("\tdel, -d proj_id\n\t\tDelete a project.\n")
 	fmt.Println("\tedit, -e proj_id:\n\t\tEdit an existing remote project's info.\n")
 	fmt.Println("\tget, -g proj_id | -l proj_id srcfile(including relative directory)\n\t\tDownload the whole project to current directory OR dump a single source file to stdout.\n")
-	fmt.Println("\tlist, -l | -l id\n\t\tList all test projects and their infomations(IDs may be most useful) OR list project directory structures of a certain project by id.\n")
+	fmt.Println("\tlist, -l | -l id\n\t\tList all test projects and their infomations(IDs may be most useful) OR list project information and directory structures of a certain project by id.\n")
 	fmt.Println("\trun, -r proj_id [arg1 arg2 arg3...]\n\t\tRun a proj, get commandline result.\n")
 	fmt.Println("\tsearch, -s keyword1[ keyword2 keyword3...]\n\t\tSearch for a project by case-insensitive keywords.\n")
 	fmt.Println("\tSearch, -S keyword1[ keyword2 keyword3...]\n\t\tSearch for a project by case-sensitive keywords.\n")
