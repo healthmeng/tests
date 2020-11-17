@@ -361,7 +361,7 @@ func doCloneProj(id int64) {
 	}
 	os.Chdir(projpath)
 	patdir, _ := regexp.Compile("^\\[dir\\]\\s+(\\S+.*)$")
-	patfile, _ := regexp.Compile("^\\s+\\[(\\d+)\\|(\\d+)\\]\\s+(\\S+.*)$")
+	patfile, _ := regexp.Compile("^\\s+\\[size:(\\d+)\\|mode:(\\d+)\\]\\s+(\\S+.*)$")
 	nAll := len(projsrc)
 	nCur := 0
 	for _, line := range projsrc {

@@ -133,7 +133,7 @@ func makeOutput(rootdir string, dfiles []string) ([]string, error) {
 			if isdir {
 				result = append(result, "[dir] "+final)
 			} else {
-				result = append(result, fmt.Sprintf("      [%d|%o] %s", pinfo.Size(), pinfo.Mode(), final))
+				result = append(result, fmt.Sprintf("      [size:%d|mode:%o] %s", pinfo.Size(), pinfo.Mode(), final))
 			}
 		}
 		return result, nil
