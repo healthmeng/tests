@@ -484,7 +484,7 @@ func doSearch(keywords []string, cs bool) {
 	/*
 	   search client:
 	   	-> Search\n
-	   	-> nArgs
+	   	-> nArgs\n
 	   	-> keyword1\n
 	   	-> keyword2\n
 	   	-> ...
@@ -521,10 +521,26 @@ func doSearch(keywords []string, cs bool) {
 		} else {
 			objinfo := obj.dumpInfo()
 			for _, kw := range keywords {
+				target,_:=regexp.Compile("(?i)"+kw)
 				if strings.ToLower(runtime.GOOS) == "windows" {
-					objinfo = strings.Replace(objinfo, kw, ">"+kw+"<", -1)
+					if cs{
+						objinfo = strings.Replace(objinfo, kw, ">"+kw+"<", -1)
+					}else{
+						objinfo=target.ReplaceAllStringFunc(objinfo,func (found string)string{
+							return ">"+found+"<"
+
+						})
+					}
+
+
 				} else {
-					objinfo = strings.Replace(objinfo, kw, "\033[7m"+kw+"\033[0m", -1)
+					if cs{
+						objinfo = strings.Replace(objinfo, kw, "\033[7m"+kw+"\033[0m", -1)
+					}else{
+						objinfo=target.ReplaceAllStringFunc(objinfo,func (found string)string{
+							return "\033[7m"+found+"\033[0m"
+						})
+					}
 				}
 			}
 			fmt.Println(objinfo)
