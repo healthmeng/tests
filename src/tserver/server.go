@@ -14,10 +14,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	_ "backend/runasm"
 	_ "backend/runcncpp"
 	_ "backend/rungo"
 	_ "backend/runpy"
-	_ "backend/runasm"
 	_ "backend/runscript"
 
 )
