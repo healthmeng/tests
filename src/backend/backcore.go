@@ -7,7 +7,7 @@ import (
 	"log"
 	"errors"
 	"fmt"
-	_"github.com/Go-SQL-Driver/MySQL"
+	_"MySQL"
 	"os"
 	"os/exec"
 	"strconv"
